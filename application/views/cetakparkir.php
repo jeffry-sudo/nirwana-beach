@@ -68,8 +68,8 @@
     ?>
     <div class="ticket">
         <!-- Header -->
-        <h2>KOPERASI JASA <br>NIRWANA MAHADA GROUP</h2>
-        <p>AHU-0011146.AH.01.26.TAHUN 2021</p>
+        <!-- <h2>KOPERASI JASA <br>NIRWANA MAHADA GROUP</h2>
+        <p>AHU-0011146.AH.01.26.TAHUN 2021</p> -->
         <div class="separator"></div>
         <h2>KARCIS MASUK</h2>
         <p>KAWASAN WISATA PANTAI NIRWANA</p>
@@ -78,7 +78,14 @@
         
         <!-- Data Jumlah Orang dan Motor -->
         <!-- Data Jumlah Orang dan Motor -->
-        <p><strong>Jumlah Orang:</strong> <?= $jumlahOrang; ?> x Rp <?= number_format($hargaPerOrang, 0, ',', '.'); ?></p>
+       
+        <!-- Barcode -->
+       <!-- Barcode -->
+        <div class="barcode">
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= $cetak['kd_masuk']; ?>&code=Code128&dpi=80&width=45&height=40" alt="Barcode">
+        </div>
+
+         <p><strong>Jumlah Orang:</strong> <?= $jumlahOrang; ?> x Rp <?= number_format($hargaPerOrang, 0, ',', '.'); ?></p>
 
         <!-- Tampilkan jumlah motor hanya jika bukan Pejalan Kaki -->
         <?php if ($jumlahMotor > 0): ?>
@@ -88,16 +95,10 @@
         <h1><strong>Total Harga:</strong> Rp <?= number_format($totalHarga, 0, ',', '.'); ?></h1>
         <div class="separator"></div>
 
-        <!-- Barcode -->
-       <!-- Barcode -->
-        <div class="barcode">
-            <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= $cetak['kd_masuk']; ?>&code=Code128&dpi=80&width=45&height=15" alt="Barcode">
-        </div>
 
         <p>SIMPANLAH TIKET DENGAN AMAN</p>
         <!-- <p>KERUSAKAN DAN KEHILANGAN BARANG BUKAN TANGGUNG JAWAB PENGELOLA</p> -->
         <!-- <p>KEHILANGAN TIKET PARKIR DIKENAKAN DENDA Rp.10.000,-</p> -->
-         <br><br>
         <div class="separator"></div>
     </div>
 
