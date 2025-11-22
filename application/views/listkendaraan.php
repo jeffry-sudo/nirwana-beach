@@ -43,7 +43,8 @@
                     <h3 class="card-title">List Kendaraan Yang Belum Keluar</h3>
                   </div>
                   <!-- /.card-header -->
-                  <table id="example1" class="table table-bordered table-striped">
+                   <div class="table-responsive">
+                  <table id="example1" class="table table-bordered table-striped responsive">
                     <thead>
                       <tr>
                         <th>Kode Karcis</th>
@@ -74,6 +75,7 @@
                     <?php } ?>
                     </tfoot>
                     </table>
+                        </div>
                   </div>
                   <!-- /.card -->
                 </div>

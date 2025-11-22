@@ -323,77 +323,66 @@ class Laporan extends CI_Controller {
             return "K".$kd;
         }
 
-		  public function update_status_masuk()
-{
-    $kd_masuk = $this->input->post('kd_masuk');
-    $kd_admin = $this->session->userdata('kd_admin');
+		  public function update_status_masuk() {
+			$kd_masuk = $this->input->post('kd_masuk');
+			$kd_admin = $this->session->userdata('kd_admin'); // Ambil kd_admin dari session login
+			$sqlcek = $this->db->query("SELECT * FROM tbl_masuk RIGHT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE kd_masuk = '".$kd_masuk."' AND status_masuk = '1' ")->row_array();
+			
+				$awal  = strtotime($sqlcek['tgl_masuk']); //waktu awal
+				$akhir = strtotime(date('Y-m-d H:i:s')); //waktu akhir
+				$diff  = $akhir - $awal;
+				$jam   = floor($diff / (60 * 60));
+				$menit = $diff - $jam * (60 * 60);
 
-    if (!$kd_masuk || !$kd_admin) {
-        echo json_encode(["status" => "error", "message" => "Data tidak valid"]);
-        return;
-    }
+				$total = $sqlcek['harga_kendaraan']*$sqlcek['jml_org'];
 
-    // Ambil data karcis saat masuk
-    $sqlcek = $this->db->query("
-        SELECT * FROM tbl_masuk 
-        JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan
-        WHERE kd_masuk = '$kd_masuk'
-    ")->row_array();
+			if (!$kd_masuk || !$kd_admin) {
+				echo json_encode(["status" => "error", "message" => "Data tidak valid"]);
+				return;
+			}
+		
+			// Cek apakah karcis sudah diklaim
+			$this->db->select('kd_admin');
+			$this->db->from('tbl_masuk');
+			$this->db->where('kd_masuk', $kd_masuk);
+			$query = $this->db->get();
+			$result = $query->row();
+		
+			if ($result) {
+				if ($result->kd_admin !== null) {
+					// Jika kd_admin sudah terisi, beritahu user
+					echo json_encode(["status" => "error", "message" => "Karcis sudah diklaim"]);
+					return;
+				}
+		
+				// Update kd_admin jika masih NULL
+				$this->db->where('kd_masuk', $kd_masuk);
+				$this->db->update('tbl_masuk', ['kd_admin' => $kd_admin, 'status_masuk' => 2]);
 
-    if (!$sqlcek) {
-        echo json_encode(["status" => "error", "message" => "Kode tidak ditemukan"]);
-        return;
-    }
-
-    // Cek apakah sudah pernah diklaim
-    if ($sqlcek['kd_admin'] !== null) {
-        echo json_encode(["status" => "error", "message" => "Karcis sudah diklaim"]);
-        return;
-    }
-
-    // Hitung durasi
-    $awal  = strtotime($sqlcek['tgl_masuk']);
-    $akhir = strtotime(date('Y-m-d H:i:s'));
-    $diff  = $akhir - $awal;
-
-    $jam   = floor($diff / 3600);
-    $menit = floor(($diff % 3600) / 60);
-
-    $lama_parkir = "$jam Jam, $menit Menit";
-
-    // Hitung total
-    $total = $sqlcek['harga_kendaraan'] * $sqlcek['jml_org'];
-
-    // Update status masuk + tambahkan admin yg memproses
-    $this->db->where('kd_masuk', $kd_masuk);
-    $this->db->update('tbl_masuk', [
-        'kd_admin' => $kd_admin,
-        'status_masuk' => 2
-    ]);
-
-    // Insert ke tabel keluar
-    $data_keluar = [
-        'kd_keluar' => $this->get_kod(),
-        'kd_masuk' => $kd_masuk,
-        'kd_member' => null,
-        'tgl_jam_masuk' => $sqlcek['tgl_masuk'],
-        'tgl_jam_keluar' => date("Y-m-d H:i:s", $akhir),
-        'lama_parkir_keluar' => $lama_parkir,
-        'tarif_keluar' => $sqlcek['harga_kendaraan'],
-        'total_keluar' => $total,
-        'status_keluar' => 1,
-        'create_keluar' => $this->session->userdata('nama_admin')
-    ];
-
-    $this->db->insert('tbl_keluar', $data_keluar);
-
-    if ($this->db->affected_rows() > 0) {
-        echo json_encode(["status" => "success", "message" => "Karcis berhasil diklaim"]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "Terjadi kesalahan, coba lagi"]);
-    }
-}
-
+				$data = array(
+					'kd_keluar' => $this->get_kod(),
+					'kd_masuk'	=> $kd_masuk,
+					'kd_member' => 'NULL',
+					'tgl_jam_masuk' => $sqlcek['tgl_masuk'],
+					'tgl_jam_keluar' => date("Y-m-d H:i:s",$akhir),
+					'lama_parkir_keluar' =>  $jam .  ' Jam,' . floor( $menit / 60 ) . ' Menit',
+					'tarif_keluar' => $sqlcek['harga_kendaraan'],
+					'total_keluar' => $total,
+					'status_keluar' => 1,
+					'create_keluar' => $this->session->userdata('nama_admin')
+					 );
+				// die(print_r($data));
+				$this->db->insert('tbl_keluar', $data);
+		
+				if ($this->db->affected_rows() > 0) {
+					echo json_encode(["status" => "success", "message" => "Karcis berhasil diklaim"]);
+				} else {
+					echo json_encode(["status" => "error", "message" => "Terjadi kesalahan, coba lagi"]);
+				}
+			} else {
+				echo json_encode(["status" => "error", "message" => "Kode tidak ditemukan"]);
+			}
+		}
 
 		
 	

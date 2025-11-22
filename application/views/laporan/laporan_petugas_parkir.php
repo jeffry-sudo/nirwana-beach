@@ -8,9 +8,9 @@
     <?php $this->load->view('include/base_css'); ?>
     <link rel="stylesheet" href="<?php echo base_url('assets') ?>/plugins/datatables/dataTables.bootstrap4.min.css">
     <link href='<?php echo base_url();?>assets/dist/js/jquery.autocomplete.css' rel='stylesheet' />
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <!-- <script src="https://unpkg.com/html5-qrcode"></script> -->
+ 
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
         .floating-button { position: fixed; bottom: 20px; right: 20px; background-color: #28a745; color: white; padding: 12px 20px; border-radius: 50px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); }
@@ -158,7 +158,8 @@
     <div id="scanModal" class="modal">
       <div class="modal-content">
         <h3>Scan Barcode</h3>
-        <div id="qr-reader"></div>
+        <video id="preview" style="width:100%;"></video>
+        <input type="file" id="uploadImage" accept="image/*" class="form-control" />
         <p id="qr-result"></p>
         <button class="close-button" onclick="closeScanner()">Tutup</button>
       </div>
@@ -169,67 +170,103 @@
       <script type='text/javascript' src='<?php echo base_url();?>assets/dist/js/jquery.autocomplete.js'></script>
       <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
       <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-      
+    \
     <script>
-             let qrScanner;
+ let codeReader = new ZXing.BrowserMultiFormatReader();
+let isCameraRunning = false;
 
 document.getElementById("scanButton").addEventListener("click", function () {
     document.getElementById("scanModal").style.display = "flex";
-    startScanner();
+    startZXingScanner();
 });
 
-function startScanner() {
-    if (!qrScanner) {
-        qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
-        qrScanner.render(onScanSuccess, onScanError);
-    }
-}
+/* ==== START CAMERA SCAN ==== */
+function startZXingScanner() {
+    if (isCameraRunning) return; // cegah video play 2x
+    isCameraRunning = true;
 
-function onScanSuccess(decodedText, decodedResult) {
-    document.getElementById("qr-result").innerText = "Hasil: " + decodedText;
+    codeReader.decodeFromVideoDevice(null, 'preview', (result, err) => {
+        if (result) {
+            let kd = result.text;
+            document.getElementById("qr-result").innerHTML = "Hasil: " + kd;
 
-    // Kirim hasil scan ke server untuk update kd_admin
-    $.ajax({
-        url: '<?php echo base_url('laporan/update_status_masuk'); ?>',
-        method: 'POST',
-        data: { kd_masuk: decodedText },
-        dataType: 'json',
-        success: function (response) {
-            alert(response.message); // Tampilkan pesan dari server
-
-            if (response.status === "success") {
-                closeScanner();
-                location.reload(); // Refresh halaman jika update berhasil
-            }
-        },
-        error: function () {
-            alert("Gagal memperbarui data. Silakan coba lagi.");
+            // Kirim kode ke server
+            $.ajax({
+                url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
+                type: "POST",
+                data: { kd_masuk: kd },
+                dataType: "json",
+                success: function(response) {
+                    alert(response.message);
+                    if (response.status === "success") {
+                        closeScanner();
+                        location.reload();
+                    }
+                },
+                error: function() {
+                    alert("Gagal mengirim data ke server.");
+                }
+            });
         }
     });
 }
 
-function onScanError(error) {
-    console.warn("Scan error:", error);
-}
-
+/* ==== STOP CAMERA ==== */
 function closeScanner() {
     document.getElementById("scanModal").style.display = "none";
-
-    if (qrScanner) {
-        try {
-            qrScanner.stop().then(() => {
-                if (document.getElementById("qr-reader")) {
-                    qrScanner.clear();
-                }
-                qrScanner = null;
-            }).catch((error) => {
-                console.error("Error saat menghentikan scanner:", error);
-            });
-        } catch (error) {
-            console.error("Error saat menutup scanner:", error);
-        }
+    
+    if (codeReader) {
+        codeReader.reset();
     }
+    isCameraRunning = false;
+    document.getElementById("qr-result").innerHTML = "";
+    document.getElementById("uploadImage").value = "";
 }
+
+/* ==== UPLOAD & SCAN IMAGE ==== */
+document.getElementById("uploadImage").addEventListener("change", function (event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function () {
+        scanImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+});
+
+function scanImage(base64Image) {
+    const imageReader = new ZXing.BrowserMultiFormatReader();
+
+    imageReader.decodeFromImage(undefined, base64Image)
+        .then(result => {
+            let kd = result.text;
+            document.getElementById("qr-result").innerHTML = "Hasil: " + kd;
+
+            $.ajax({
+                url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
+                type: "POST",
+                data: { kd_masuk: kd },
+                dataType: "json",
+                success: function(response) {
+                    alert(response.message);
+                    if (response.status === "success") {
+                        closeScanner();
+                        location.reload();
+                    }
+                },
+                error: function() {
+                    alert("Gagal mengirim data ke server.");
+                }
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById("qr-result").innerHTML =
+                "<span style='color:red'>Barcode pada gambar tidak terdeteksi.</span>";
+        });
+}
+
 
 $(document).ready(function () {
     $('#filter_dari_tanggal, #filter_sampai_tanggal').change(function() {
