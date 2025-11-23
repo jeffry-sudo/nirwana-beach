@@ -33,7 +33,7 @@ class Masuk extends CI_Controller {
 		}
 	}
 	function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
+            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
             $kd = "";
             if($q->num_rows()>0){
                 foreach($q->result() as $k){

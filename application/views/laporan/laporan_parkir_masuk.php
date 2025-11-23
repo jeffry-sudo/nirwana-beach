@@ -252,6 +252,28 @@
       <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
       <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
       <script type="text/javascript">
+$(document).ready(function () {
+
+    // Inisialisasi default DataTable saat halaman pertama kali dibuka
+    $('#example1').DataTable({
+        "paging": true,
+        "lengthChange": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false
+    });
+
+    $('#example2').DataTable({
+        "paging": true,
+        "lengthChange": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false
+    });
+
+});
 
 $(document).ready(function () {
     $('#filter_dari_tanggal, #filter_sampai_tanggal').change(function() {
