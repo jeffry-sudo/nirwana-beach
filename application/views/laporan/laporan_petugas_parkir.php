@@ -269,6 +269,35 @@ function scanImage(base64Image) {
 
 
 $(document).ready(function () {
+
+  $(document).ready(function () {
+
+    // INIT DATATABLE DEFAULT (saat halaman pertama kali dibuka)
+    $('#example1').DataTable({
+        paging: true,
+        lengthChange: true,
+        searching: false,
+        ordering: true,
+        info: true,
+        autoWidth: false,
+        scrollX: true,
+        order: [[0, "asc"]]
+    });
+
+    $('#example2').DataTable({
+        paging: true,
+        lengthChange: true,
+        searching: false,
+        ordering: true,
+        info: true,
+        autoWidth: false,
+        scrollX: true,
+        order: [[1, "desc"]]
+    });
+
+});
+
+
     $('#filter_dari_tanggal, #filter_sampai_tanggal').change(function() {
         var dariTanggal = $('#filter_dari_tanggal').val();
         var sampaiTanggal = $('#filter_sampai_tanggal').val();
