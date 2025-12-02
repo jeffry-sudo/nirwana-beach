@@ -87,11 +87,17 @@
                     <span class="me-3 fw-bold">
                         <?php echo $trx['jenis_trx'] === 'pengeluaran' ? '-' : ''; ?>Rp<?php echo number_format($trx['nominal'], 0, ',', '.'); ?>
                     </span>
-                    <form action="<?php echo base_url('laporan/delete/' . $trx['id_trx']); ?>" method="post" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
-                        <button type="submit" class="btn btn-sm btn-danger border-0">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </form>
+                    
+			
+		<?php if ($_SESSION['level'] == 1): ?>
+    <form action="<?php echo base_url('laporan/delete/' . $trx['id_trx']); ?>" method="post" onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
+        <button type="submit" class="btn btn-sm btn-danger border-0" title="Hapus Transaksi">
+            <i class="fa fa-trash"></i>
+        </button>
+    </form>
+
+    <?php endif; ?>
+
                 </div>
             </div>
         </div>

@@ -178,7 +178,19 @@ class Laporan extends CI_Controller {
 		foreach ($transaksi as $trx) {
 			$class = ($trx['jenis_trx'] === 'pendapatan') ? 'list-group-item-success' : 'list-group-item-danger';
 			$nominal = ($trx['jenis_trx'] === 'pengeluaran' ? '-' : '') . 'Rp' . number_format($trx['nominal'], 0, ',', '.');
-	
+
+			// BUTTON HANYA UNTUK LEVEL 1
+			$btnDelete = '';
+			if (isset($_SESSION['level']) && (int)$_SESSION['level'] === 1) {
+				$btnDelete = '
+					<form action="' . base_url('laporan/delete/' . $trx['id_trx']) . '" method="post" onsubmit="return confirm(\'Apakah Anda yakin ingin menghapus transaksi ini?\');">
+						<button type="submit" class="btn btn-sm btn-danger border-0">
+							<i class="fa fa-trash"></i>
+						</button>
+					</form>
+				';
+			}
+
 			$html .= '
 				<div class="list-group-item ' . $class . '">
 					<div class="d-flex justify-content-between align-items-center">
@@ -189,15 +201,12 @@ class Laporan extends CI_Controller {
 						</div>
 						<div class="d-flex align-items-center">
 							<span class="me-3 fw-bold">' . $nominal . '</span>
-							<form action="' . base_url('laporan/delete/' . $trx['id_trx']) . '" method="post" onsubmit="return confirm(\'Apakah Anda yakin ingin menghapus transaksi ini?\');">
-								<button type="submit" class="btn btn-sm btn-danger border-0">
-									<i class="fa fa-trash"></i>
-								</button>
-							</form>
+							' . $btnDelete . '
 						</div>
 					</div>
 				</div>';
 		}
+
 	
 		// Kirim data dalam format JSON
 		echo json_encode([
