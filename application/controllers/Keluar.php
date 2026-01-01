@@ -25,8 +25,8 @@ class Keluar extends CI_Controller {
 			redirect('login');
 		}
 	}
-	function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_keluar,3)) AS kd_max FROM tbl_keluar");
+		function get_kod(){
+            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
             $kd = "";
             if($q->num_rows()>0){
                 foreach($q->result() as $k){

@@ -318,8 +318,22 @@ class Laporan extends CI_Controller {
 			echo json_encode($response);
 		  }
 
-		  function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_keluar,3)) AS kd_max FROM tbl_keluar");
+		//   function get_kod(){
+        //     $q = $this->db->query("SELECT MAX(RIGHT(kd_keluar,3)) AS kd_max FROM tbl_keluar");
+        //     $kd = "";
+        //     if($q->num_rows()>0){
+        //         foreach($q->result() as $k){
+        //             $tmp = ((int)$k->kd_max)+1;
+        //             $kd = sprintf("%08s", $tmp);
+        //         }
+        //     }else{
+        //         $kd = "001";
+        //     }
+        //     return "K".$kd;
+        // }
+
+			function get_kod(){
+            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
             $kd = "";
             if($q->num_rows()>0){
                 foreach($q->result() as $k){
