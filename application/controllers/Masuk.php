@@ -32,19 +32,24 @@ class Masuk extends CI_Controller {
 			redirect('login');
 		}
 	}
-	function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
-            $kd = "";
-            if($q->num_rows()>0){
-                foreach($q->result() as $k){
-                    $tmp = ((int)$k->kd_max)+1;
-                    $kd = sprintf("%08s", $tmp);
-                }
-            }else{
-                $kd = "001";
-            }
-            return "MG".$kd;
-        }
+		function get_kod(){
+			$prefix = 'MH';
+
+			$q = $this->db->query("
+				SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max 
+				FROM tbl_masuk 
+				WHERE kd_masuk LIKE '".$prefix."%'
+			");
+
+			if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
+				$tmp = ((int)$q->row()->kd_max) + 1;
+				$kd  = sprintf("%08d", $tmp);
+			} else {
+				$kd = "00000001";
+			}
+
+			return $prefix.$kd;
+		}
 
 	// function get_kod(){
 	// 	$q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
@@ -96,14 +101,10 @@ class Masuk extends CI_Controller {
 			$this->db->insert('tbl_masuk', $data);
 			$data['cetak'] = $data;
 			$this->load->view('cetakparkir', $data);
-			$this->session->set_flashdata('alert', '$(function() {
-	                $.bootstrapGrowl("Karcis Sudah Dibuat",{
-	                		type: "success",
-	                        align: "right",
-	                        width: "auto",
-	                        allow_dismiss: false
-	                });
-	            	});');
+			$this->session->set_flashdata('alert', [
+				'msg'  => 'Karcis Sudah Dibuat',
+				'type' => 'success'
+			]);
 			redirect('masuk');
 			// }else{
 			// 	$this->session->set_flashdata('alert', '$(function() {
@@ -117,14 +118,10 @@ class Masuk extends CI_Controller {
 			// 	redirect('masuk');	
 			// }
 			}else{
-				$this->session->set_flashdata('alert', '$(function() {
-			                $.bootstrapGrowl("Pilih Jenis Kendaraan",{
-			                		type: "error",
-			                        align: "right",
-			                        width: "auto",
-			                        allow_dismiss: false
-			                });
-			            	});');
+				$this->session->set_flashdata('alert', [
+				'msg'  => 'Pilih Jenis Kendaraan',
+				'type' => 'error'
+				]);
 				redirect('masuk');	
 			}
 		}else{

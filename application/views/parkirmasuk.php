@@ -143,7 +143,12 @@
                         <td><?php echo date('H:i:s',strtotime($row['tgl_masuk'])) ?></td>
                         <td><?php echo $row['create_masuk'] ?></td>
                         <?php if ($_SESSION['level'] == 1): ?> 
-                            <td><a href="<?php echo base_url('masuk/delete/'.$row['kd_masuk']) ?>"><i class="fa fa-trash"></i></a></td>
+                           <td>
+                              <a href="javascript:void(0)"
+                                onclick="confirmDelete('<?php echo base_url('masuk/delete/'.$row['kd_masuk']) ?>')">
+                                <i class="fa fa-trash text-danger"></i>
+                              </a>
+                          </td>
                         <?php endif; ?>
                       </tr>
                       <?php } ?>
@@ -164,7 +169,23 @@
       <!-- ./wrapper -->
       <!-- script -->
       <?php $this->load->view('include/base_js'); ?>
+
+      <?php if ($alert = $this->session->flashdata('alert')): ?>
+<script>
+$(function(){
+    $.bootstrapGrowl("<?= $alert['msg'] ?>",{
+        type: "<?= $alert['type'] ?>",
+        align: "right",
+        width: "auto",
+        allow_dismiss: false
+    });
+});
+</script>
+<?php endif; ?>
+
       <script type='text/javascript' src='<?php echo base_url();?>assets/dist/js/jquery.autocomplete.js'></script>
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
       <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
       <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
       <!-- <script src="<?php echo base_url('assets') ?>/plugins/datatables/jquery.dataTables.min.js"></script> -->
@@ -221,6 +242,21 @@
       }
 
 
+      function confirmDelete(url) {
+          Swal.fire({
+              title: 'Yakin hapus?',
+              text: 'Data parkir akan dihapus permanen!',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Ya, hapus',
+              cancelButtonText: 'Batal'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  window.location.href = url;
+              }
+          });
+      }
+        
       </script>
     </body>
   </html>
