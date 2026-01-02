@@ -228,8 +228,35 @@ class Laporan extends CI_Controller {
         $data['jumlah_mobil'] = $this->Laporan_model->get_jumlah_mobil();
         $data['jumlah_motor'] = $this->Laporan_model->get_jumlah_motor();
         $data['jumlah_orang'] = $this->Laporan_model->get_jumlah_orang();
-		$data['masuk'] = $this->db->query("SELECT * FROM tbl_masuk LEFT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE DATE_FORMAT(tgl_masuk, '%Y-%m-%d')=CURDATE() ")->result_array();
-		$data['masuk_detail'] = $this->db->query("SELECT a.create_masuk, SUM( CASE WHEN a.kd_kendaraan = 'JK003' THEN 0 ELSE b.harga_kendaraan END + (a.jml_org * 2000) ) AS total_penjualan FROM `tbl_masuk` `a` LEFT JOIN `tbl_kendaraan` `b` ON `a`.`kd_kendaraan` = `b`.`kd_kendaraan` WHERE DATE_FORMAT(a.tgl_masuk, '%Y-%m-%d') = CURDATE() group by 1")->result_array();
+		// $data['masuk'] = $this->db->query("SELECT * FROM tbl_masuk LEFT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE DATE_FORMAT(tgl_masuk, '%Y-%m-%d')=CURDATE() ")->result_array();
+		// $data['masuk_detail'] = $this->db->query("SELECT a.create_masuk, SUM( CASE WHEN a.kd_kendaraan = 'JK003' THEN 0 ELSE b.harga_kendaraan END + (a.jml_org * 2000) ) AS total_penjualan FROM `tbl_masuk` `a` LEFT JOIN `tbl_kendaraan` `b` ON `a`.`kd_kendaraan` = `b`.`kd_kendaraan` WHERE DATE_FORMAT(a.tgl_masuk, '%Y-%m-%d') = CURDATE() group by 1")->result_array();
+		$data['masuk'] = $this->db->query("
+			SELECT *
+			FROM tbl_masuk a
+			LEFT JOIN tbl_kendaraan b 
+				ON a.kd_kendaraan = b.kd_kendaraan
+			WHERE a.tgl_masuk >= '".date('Y-m-d 00:00:00')."'
+			AND a.tgl_masuk <= '".date('Y-m-d 23:59:59')."'
+		")->result_array();
+
+		$data['masuk_detail'] = $this->db->query("
+			SELECT 
+				a.create_masuk,
+				SUM(
+					CASE 
+						WHEN a.kd_kendaraan = 'JK003' THEN 0 
+						ELSE b.harga_kendaraan 
+					END + (a.jml_org * 2000)
+				) AS total_penjualan
+			FROM tbl_masuk a
+			LEFT JOIN tbl_kendaraan b 
+				ON a.kd_kendaraan = b.kd_kendaraan
+			WHERE a.tgl_masuk >= '".date('Y-m-d 00:00:00')."'
+			AND a.tgl_masuk <= '".date('Y-m-d 23:59:59')."'
+			GROUP BY a.create_masuk
+		")->result_array();
+
+
 
         $this->load->view('laporan/laporan_parkir_masuk', $data);
 	}

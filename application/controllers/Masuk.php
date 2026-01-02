@@ -21,7 +21,7 @@ class Masuk extends CI_Controller {
 	public function index(){
 		$data['title'] = 'Parkir Masuk';
 		$data['jenis'] = $this->db->query("SELECT * FROM tbl_kendaraan WHERE jenis_kendaraan = '1'")->result_array();
-		$data['masuk'] = $this->db->query("SELECT * FROM tbl_masuk RIGHT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE tgl_masuk LIKE '".date('Y-m-d')."%' AND status_masuk = '1' order by status_karcis asc")->result_array();
+		$data['masuk'] = $this->db->query("SELECT * FROM tbl_masuk RIGHT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE tgl_masuk LIKE '".date('Y-m-d')."%' AND status_masuk = '1' order by tgl_masuk DESC, status_karcis asc ")->result_array();
 		// die(print_r($data));
 		$this->load->view('parkirmasuk', $data, FALSE);
 	}
