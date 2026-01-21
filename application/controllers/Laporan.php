@@ -437,11 +437,11 @@ class Laporan extends CI_Controller {
 
     $this->db->insert('tbl_keluar', $data_keluar);
 
-    if ($this->db->affected_rows() > 0) {
+    // if ($this->db->affected_rows() > 0) {
         echo json_encode(["status" => "success", "message" => "Karcis berhasil diklaim"]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "Terjadi kesalahan, coba lagi"]);
-    }
+    // } else {
+        // echo json_encode(["status" => "error", "message" => "Terjadi kesalahan, coba lagi"]);
+    // }
 }
 
 

@@ -161,7 +161,17 @@
         <video id="preview" style="width:100%;"></video>
         <input type="file" id="uploadImage" accept="image/*" class="form-control" />
         <p id="qr-result"></p>
-        <button class="close-button" onclick="closeScanner()">Tutup</button>
+        <!-- <button class="close-button" onclick="closeScanner()">Tutup</button> -->
+         <p id="qr-result"></p>
+
+            <hr>
+
+            <label><b>Input Kode Manual</b></label>
+            <input type="text" id="manual_kode" class="form-control" placeholder="Masukkan kode karcis">
+            <button class="btn btn-primary mt-2" onclick="submitManualKode()">Proses</button>
+
+            <button class="close-button" onclick="closeScanner()">Tutup</button>
+
       </div>
     </div>
     
@@ -212,15 +222,28 @@ function startZXingScanner() {
 }
 
 /* ==== STOP CAMERA ==== */
+// function closeScanner() {
+//     document.getElementById("scanModal").style.display = "none";
+    
+//     if (codeReader) {
+//         codeReader.reset();
+//     }
+//     isCameraRunning = false;
+//     document.getElementById("qr-result").innerHTML = "";
+//     document.getElementById("uploadImage").value = "";
+// }
+
 function closeScanner() {
     document.getElementById("scanModal").style.display = "none";
-    
+
     if (codeReader) {
         codeReader.reset();
     }
+
     isCameraRunning = false;
     document.getElementById("qr-result").innerHTML = "";
     document.getElementById("uploadImage").value = "";
+    document.getElementById("manual_kode").value = "";
 }
 
 /* ==== UPLOAD & SCAN IMAGE ==== */
@@ -260,11 +283,20 @@ function scanImage(base64Image) {
                 }
             });
         })
+        // .catch(err => {
+        //     console.error(err);
+        //     document.getElementById("qr-result").innerHTML =
+        //         "<span style='color:red'>Barcode pada gambar tidak terdeteksi.</span>";
+        // });
+
         .catch(err => {
             console.error(err);
             document.getElementById("qr-result").innerHTML =
-                "<span style='color:red'>Barcode pada gambar tidak terdeteksi.</span>";
+                "<span style='color:red'>Barcode tidak terbaca. Silakan input kode manual.</span>";
+
+            document.getElementById("manual_kode").focus();
         });
+
 }
 
 
@@ -395,6 +427,32 @@ $(document).ready(function () {
         }
     });
 });
+
+function submitManualKode() {
+    let kd = document.getElementById("manual_kode").value.trim();
+
+    if (kd === "") {
+        alert("Kode karcis tidak boleh kosong");
+        return;
+    }
+
+    $.ajax({
+        url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
+        type: "POST",
+        data: { kd_masuk: kd },
+        dataType: "json",
+        success: function(response) {
+            alert(response.message);
+            if (response.status === "success") {
+                closeScanner();
+                location.reload();
+            }
+        },
+        error: function() {
+            alert("Gagal mengirim data ke server.");
+        }
+    });
+}
 
 
     </script>

@@ -32,29 +32,11 @@ class Masuk extends CI_Controller {
 			redirect('login');
 		}
 	}
-		function get_kod(){
-			$prefix = 'MH';
-
-			$q = $this->db->query("
-				SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max 
-				FROM tbl_masuk 
-				WHERE kd_masuk LIKE '".$prefix."%'
-			");
-
-			if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
-				$tmp = ((int)$q->row()->kd_max) + 1;
-				$kd  = sprintf("%08d", $tmp);
-			} else {
-				$kd = "00000001";
-			}
-
-			return $prefix.$kd;
-		}
-
+	
 	// function get_kod(){
-	// 	$q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
-	// 	$kd = "";
-	// 	if($q->num_rows() > 0){
+		// 	$q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
+		// 	$kd = "";
+		// 	if($q->num_rows() > 0){
 	// 		foreach($q->result() as $k){
 	// 			$tmp = ((int)$k->kd_max) + 1;
 	// 			$kd = sprintf("%03s", $tmp); // Menggunakan 3 digit angka
@@ -69,7 +51,69 @@ class Masuk extends CI_Controller {
 	
 	// 	return "M" . $tanggal . $random . $kd;
 	// }
+	
+	// function get_kod(){
+	// 	$prefix = 'MH';
 
+	// 	$q = $this->db->query("
+	// 		SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max 
+	// 		FROM tbl_masuk 
+	// 		WHERE kd_masuk LIKE '".$prefix."%'
+	// 	");
+
+	// 	if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
+	// 		$tmp = ((int)$q->row()->kd_max) + 1;
+	// 		$kd  = sprintf("%08d", $tmp);
+	// 	} else {
+	// 		$kd = "00000001";
+	// 	}
+
+	// 	return $prefix.$kd;
+	// }
+
+			function get_kod()
+{
+    $length = 4; // mulai dari 4 karakter
+
+    do {
+        $kode = $this->randomString($length);
+
+        $cek = $this->db
+            ->where('kd_masuk', $kode)
+            ->get('tbl_masuk')
+            ->num_rows();
+
+        // jika kode bentrok dan kombinasi sudah penuh → naik digit
+        if ($cek > 0 && $this->isCombinationFull($length)) {
+            $length++;
+        }
+
+    } while ($cek > 0);
+
+    return $kode;
+}
+
+private function randomString($length)
+{
+    $chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    $result = '';
+
+    for ($i = 0; $i < $length; $i++) {
+        $result .= $chars[random_int(0, strlen($chars) - 1)];
+    }
+
+    return $result;
+}
+
+private function isCombinationFull($length)
+{
+    // 26 huruf + 10 angka = 36 kombinasi
+    $totalPossible = pow(36, $length);
+
+    $totalUsed = $this->db->count_all('tbl_masuk');
+
+    return $totalUsed >= $totalPossible;
+}
 	
 	public function kendaraanmasuk(){
 		// die(print_r($_POST));
