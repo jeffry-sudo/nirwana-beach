@@ -71,29 +71,27 @@ class Masuk extends CI_Controller {
 	// 	return $prefix.$kd;
 	// }
 
-function get_kod()
+	function get_kod()
 {
-    $ym = date('ym'); // 2501
-    $random = $this->randomString(4);
+    $length = 4; // mulai dari 4 karakter
 
-    $this->db->select('CAST(RIGHT(kd_masuk,3) AS UNSIGNED) AS seq', false);
-    $this->db->where('SUBSTRING(kd_masuk, 6, 4) =', $ym);
-    $this->db->order_by('seq', 'DESC');
-    $this->db->limit(1);
-    $q = $this->db->get('tbl_masuk');
+    do {
+        $kode = $this->randomString($length);
 
-    if ($q->num_rows() > 0) {
-        $next = $q->row()->seq + 1;
-    } else {
-        $next = 1;
-    }
+        $cek = $this->db
+            ->where('kd_masuk', $kode)
+            ->get('tbl_masuk')
+            ->num_rows();
 
-    $seq = str_pad($next, 3, '0', STR_PAD_LEFT);
+        // jika kode bentrok dan kombinasi sudah penuh → naik digit
+        if ($cek > 0 && $this->isCombinationFull($length)) {
+            $length++;
+        }
 
-    return $random . '_' . $ym . '_' . $seq;
+    } while ($cek > 0);
+
+    return $kode;
 }
-
-
 
 private function randomString($length)
 {
@@ -106,7 +104,6 @@ private function randomString($length)
 
     return $result;
 }
-
 
 private function isCombinationFull($length)
 {
