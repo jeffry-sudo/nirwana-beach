@@ -34,9 +34,9 @@ class Masuk extends CI_Controller {
 	}
 	
 	// function get_kod(){
-		// 	$q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
-		// 	$kd = "";
-		// 	if($q->num_rows() > 0){
+	// 		$q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,3)) AS kd_max FROM tbl_masuk");
+	// 		$kd = "";
+	// 		if($q->num_rows() > 0){
 	// 		foreach($q->result() as $k){
 	// 			$tmp = ((int)$k->kd_max) + 1;
 	// 			$kd = sprintf("%03s", $tmp); // Menggunakan 3 digit angka
@@ -52,46 +52,88 @@ class Masuk extends CI_Controller {
 	// 	return "M" . $tanggal . $random . $kd;
 	// }
 	
-	// function get_kod(){
-	// 	$prefix = 'MH';
+	function get_kod(){
+		$prefix = 'MH';
+		$max_attempts = 5;
+		$attempt = 0;
 
-	// 	$q = $this->db->query("
-	// 		SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max 
-	// 		FROM tbl_masuk 
-	// 		WHERE kd_masuk LIKE '".$prefix."%'
-	// 	");
+		while ($attempt < $max_attempts) {
+			try {
+				// Start transaction to prevent race conditions
+				$this->db->trans_start();
 
-	// 	if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
-	// 		$tmp = ((int)$q->row()->kd_max) + 1;
-	// 		$kd  = sprintf("%08d", $tmp);
-	// 	} else {
-	// 		$kd = "00000001";
-	// 	}
+				// Lock the table for reading to get the max value
+				$this->db->query("LOCK TABLES tbl_masuk WRITE");
 
-	// 	return $prefix.$kd;
-	// }
+				$q = $this->db->query("
+					SELECT MAX(CAST(RIGHT(kd_masuk,8) AS UNSIGNED)) AS kd_max 
+					FROM tbl_masuk 
+					WHERE kd_masuk LIKE '".$prefix."%'
+				");
 
-function get_kod()
-{
-    $ym = date('ym'); // 2501
-    $random = $this->randomString(4);
+				if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
+					$tmp = ((int)$q->row()->kd_max) + 1;
+					$kd  = sprintf("%08d", $tmp);
+				} else {
+					$kd = "00000001";
+				}
 
-    $this->db->select('CAST(RIGHT(kd_masuk,3) AS UNSIGNED) AS seq', false);
-    $this->db->where('SUBSTRING(kd_masuk, 6, 4) =', $ym);
-    $this->db->order_by('seq', 'DESC');
-    $this->db->limit(1);
-    $q = $this->db->get('tbl_masuk');
+				$result = $prefix.$kd;
 
-    if ($q->num_rows() > 0) {
-        $next = $q->row()->seq + 1;
-    } else {
-        $next = 1;
-    }
+				// Unlock the table
+				$this->db->query("UNLOCK TABLES");
 
-    $seq = str_pad($next, 3, '0', STR_PAD_LEFT);
+				$this->db->trans_complete();
 
-    return $random . '_' . $ym . '_' . $seq;
-}
+				if ($this->db->trans_status() === FALSE) {
+					$attempt++;
+					if ($attempt >= $max_attempts) {
+						log_message('error', 'get_kod() failed after '.$max_attempts.' attempts');
+						throw new Exception('Failed to generate unique ID');
+					}
+					usleep(100000); // Wait 100ms before retry
+					continue;
+				}
+
+				return $result;
+
+			} catch (Exception $e) {
+				$this->db->query("UNLOCK TABLES");
+				$this->db->trans_rollback();
+				$attempt++;
+				
+				if ($attempt >= $max_attempts) {
+					log_message('error', 'get_kod() exception: '.$e->getMessage());
+					throw $e;
+				}
+				usleep(100000); // Wait 100ms before retry
+			}
+		}
+
+		throw new Exception('Unable to generate unique ID after '.$max_attempts.' attempts');
+	}
+
+// function get_kod()
+// {
+//     $ym = date('ym'); // 2501
+//     $random = $this->randomString(4);
+
+//     $this->db->select('CAST(RIGHT(kd_masuk,3) AS UNSIGNED) AS seq', false);
+//     $this->db->where('SUBSTRING(kd_masuk, 6, 4) =', $ym);
+//     $this->db->order_by('seq', 'DESC');
+//     $this->db->limit(1);
+//     $q = $this->db->get('tbl_masuk');
+
+//     if ($q->num_rows() > 0) {
+//         $next = $q->row()->seq + 1;
+//     } else {
+//         $next = 1;
+//     }
+
+//     $seq = str_pad($next, 3, '0', STR_PAD_LEFT);
+
+//     return $random . '_' . $ym . '_' . $seq;
+// }
 
 
 
