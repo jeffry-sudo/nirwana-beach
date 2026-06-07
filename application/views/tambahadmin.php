@@ -77,6 +77,7 @@
                 <div class="form-group">
                     <select name="level" class="form-control js-example-basic-single" required >
                       <option value="" selected disabled="">Pilih Hak Akses</option>
+                      <option value="5">Kasir</option>
                       <option value="4">Pengawas</option>
                       <option value="3">Petugas Parkir</option>
                       <option value="2">Penjaga Palang</option>

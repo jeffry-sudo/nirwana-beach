@@ -9,7 +9,7 @@ class Home extends CI_Controller {
 	  }
 
 		$this->getsecurity();
-		date_default_timezone_set("Asia/Jakarta");
+		date_default_timezone_set("Asia/Makassar");
 	}
 	public function index(){
 		$data['title'] = 'Dashboard';

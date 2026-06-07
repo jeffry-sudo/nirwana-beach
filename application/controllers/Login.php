@@ -5,7 +5,7 @@ class Login extends CI_Controller {
 	function __construct(){
 		parent::__construct();
 		$this->load->library('form_validation');
-		date_default_timezone_set("Asia/Jakarta");
+		date_default_timezone_set("Asia/Makassar");
 	}
 	function getsecurity($value=''){
 		$username = $this->session->userdata('username_admin');

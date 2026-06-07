@@ -80,6 +80,12 @@
               <p>Dashboard</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="<?php echo base_url('attendance') ?>" class="nav-link">
+              <i class="nav-icon fa fa-calendar-check-o"></i>
+              <p>Absensi Karyawan</p>
+            </a>
+          </li>
           <?php if ($_SESSION['level'] == 1 || $_SESSION['level'] == 2): ?> 
           
           <li class="nav-item">
@@ -219,6 +225,47 @@
                 <a href="<?php echo base_url('admin') ?>" class="nav-link">
                   <i class="fa fa-circle-o nav-icon"></i>
                   <p>Daftar Pengguna</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fa fa-calendar-check-o"></i>
+              <p>
+                Management Absensi
+                <i class="fa fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="<?php echo base_url('admin/lokasi') ?>" class="nav-link">
+                  <i class="fa fa-circle-o nav-icon"></i>
+                  <p>Lokasi Kerja</p>
+                </a>
+              </li>
+            </ul>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="<?php echo base_url('admin/shift') ?>" class="nav-link">
+                  <i class="fa fa-circle-o nav-icon"></i>
+                  <p>Shift Kerja</p>
+                </a>
+              </li>
+            </ul>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="<?php echo base_url('admin/jadwal') ?>" class="nav-link">
+                  <i class="fa fa-circle-o nav-icon"></i>
+                  <p>Jadwal Shift</p>
+                </a>
+              </li>
+            </ul>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="<?php echo base_url('admin/history_absensi') ?>" class="nav-link">
+                  <i class="fa fa-circle-o nav-icon"></i>
+                  <p>History Absensi</p>
                 </a>
               </li>
             </ul>

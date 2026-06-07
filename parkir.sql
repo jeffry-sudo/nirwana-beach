@@ -612,5 +612,93 @@ INSERT INTO `tbl_transaksi` VALUES (11, 'pengeluaran', 'Biaya Gaji', '492000', '
 INSERT INTO `tbl_transaksi` VALUES (12, 'pendapatan', 'Pendapatan Karcis', '470000', '2025-11-21');
 INSERT INTO `tbl_transaksi` VALUES (13, 'pengeluaran', 'Biaya Gaji', '370000', '2025-11-21');
 INSERT INTO `tbl_transaksi` VALUES (14, 'pengeluaran', 'Biaya Adm (Beli Kertas Print) ', '85000', '2025-11-22');
+-- ----------------------------
+-- Table structure for tbl_shift
+-- ----------------------------
+DROP TABLE IF EXISTS `tbl_shift`;
+CREATE TABLE `tbl_shift`  (
+  `kd_shift` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `nama_shift` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `jam_mulai` time NULL DEFAULT NULL,
+  `jam_selesai` time NULL DEFAULT NULL,
+  `masuk_mulai` time NULL DEFAULT NULL,
+  `masuk_selesai` time NULL DEFAULT NULL,
+  `tengah_mulai` time NULL DEFAULT NULL,
+  `tengah_selesai` time NULL DEFAULT NULL,
+  `pulang_mulai` time NULL DEFAULT NULL,
+  `pulang_selesai` time NULL DEFAULT NULL,
+  `created_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`kd_shift`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = DYNAMIC;
 
+-- ----------------------------
+-- Table structure for tbl_lokasi
+-- ----------------------------
+DROP TABLE IF EXISTS `tbl_lokasi`;
+CREATE TABLE `tbl_lokasi`  (
+  `kd_lokasi` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `nama_lokasi` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `latitude` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `longitude` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `radius_meter` int NULL DEFAULT '100',
+  `created_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`kd_lokasi`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for tbl_absensi_jadwal
+-- ----------------------------
+DROP TABLE IF EXISTS `tbl_absensi_jadwal`;
+CREATE TABLE `tbl_absensi_jadwal`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `kd_admin` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `kd_shift` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `kd_lokasi` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `tanggal` date NULL DEFAULT NULL,
+  `created_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for tbl_absensi
+-- ----------------------------
+DROP TABLE IF EXISTS `tbl_absensi`;
+CREATE TABLE `tbl_absensi`  (
+  `kd_absensi` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `kd_admin` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `tanggal` date NULL DEFAULT NULL,
+  `kd_shift` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `kd_lokasi` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `status_kehadiran` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `created_at` datetime NULL DEFAULT NULL,
+  `updated_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`kd_absensi`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for tbl_absensi_scan
+-- ----------------------------
+DROP TABLE IF EXISTS `tbl_absensi_scan`;
+CREATE TABLE `tbl_absensi_scan`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `kd_absensi` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `stage` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `waktu_scan` datetime NULL DEFAULT NULL,
+  `latitude` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `longitude` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `jarak_meter` decimal(10,2) NULL DEFAULT NULL,
+  `status_valid` tinyint(1) NULL DEFAULT '0',
+  `message` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+  `photo_base64` longtext CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL,
+  `created_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Sample attendance configuration
+-- ----------------------------
+INSERT INTO `tbl_shift` VALUES ('S01', 'Shift Pagi', '06:00:00', '10:00:00', '05:55:00', '06:30:00', '08:00:00', '08:15:00', '09:30:00', '10:15:00', '2025-11-19 00:00:00');
+INSERT INTO `tbl_lokasi` VALUES ('L01', 'Loket', '-6.200000', '106.816666', 30, '2025-11-19 00:00:00');
+INSERT INTO `tbl_lokasi` VALUES ('L02', 'Pintu Keluar', '-6.200300', '106.817000', 30, '2025-11-19 00:00:00');
+INSERT INTO `tbl_lokasi` VALUES ('L03', 'Pos Pendakian', '-6.199700', '106.816300', 30, '2025-11-19 00:00:00');
 SET FOREIGN_KEY_CHECKS = 1;

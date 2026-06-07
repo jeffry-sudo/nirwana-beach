@@ -16,7 +16,7 @@ class Masuk extends CI_Controller {
 
 		$this->load->helper('tglindo_helper');
 		$this->getsecurity();
-		date_default_timezone_set("Asia/Jakarta");
+		date_default_timezone_set("Asia/Makassar");
 	}
 	public function index(){
 		$data['title'] = 'Parkir Masuk';

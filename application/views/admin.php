@@ -68,10 +68,12 @@
                           <td><?php echo $row['email_admin']; ?></td>
                           <td><?php if ($row['level_admin'] == '1') { ?>
                             <p class="btn-info">OWNER</p>
-                          <?php }else if($row['level_admin'] == '2'){ ?>
+                          <?php } else if ($row['level_admin'] == '2') { ?>
                             <p class="btn-success">Penjaga Palang</p>
-                          <?php } else if($row['level_admin'] == '3'){?>
+                          <?php } else if ($row['level_admin'] == '3') { ?>
                             <p class="btn-warning">Petugas Parkir</p>
+                          <?php } else if ($row['level_admin'] == '5') { ?>
+                            <p class="btn-secondary">Kasir</p>
                           <?php } else { ?>
                             <p class="btn-danger">Pengawas</p>
                           <?php } ?>

@@ -121,7 +121,7 @@ if ( ! function_exists('tgl_indo')){
   }
   function time_since($original)
 {
-  date_default_timezone_set('Asia/Jakarta');
+  date_default_timezone_set('Asia/Makassar');
   $chunks = array(
       array(60 * 60 * 24 * 365, 'tahun'),
       array(60 * 60 * 24 * 30, 'bulan'),

@@ -16,7 +16,7 @@ class Keluar extends CI_Controller {
 
 		$this->load->helper('tglindo_helper');
 		$this->getsecurity();
-		date_default_timezone_set("Asia/Jakarta");
+		date_default_timezone_set("Asia/Makassar");
 	}
 	function getsecurity($value=''){
 		$username = $this->session->userdata('username_admin');
