@@ -116,17 +116,25 @@ class Admin extends CI_Controller {
 	}
 
 	private function get_kode_lokasi() {
-		$q = $this->db->query("SELECT MAX(RIGHT(kd_lokasi,3)) AS kd_max FROM tbl_lokasi");
-		$kd = "";
+		$prefix = 'L';
+		$q = $this->db->query("SELECT MAX(RIGHT(kd_lokasi,3)) AS kd_max FROM tbl_lokasi WHERE kd_lokasi LIKE 'L%'");
+		$count = 1;
 		if ($q->num_rows() > 0) {
-			foreach ($q->result() as $k) {
-				$tmp = ((int)$k->kd_max) + 1;
-				$kd = sprintf("%03s", $tmp);
+			$row = $q->row_array();
+			if (!empty($row['kd_max'])) {
+				$count = (int)$row['kd_max'] + 1;
 			}
-		} else {
-			$kd = "001";
 		}
-		return "L" . $kd;
+
+		do {
+			$code = $prefix . str_pad($count, 3, '0', STR_PAD_LEFT);
+			$exists = $this->db->where('kd_lokasi', $code)->count_all_results('tbl_lokasi') > 0;
+			if ($exists) {
+				$count++;
+			}
+		} while ($exists);
+
+		return $code;
 	}
 
 	public function lokasi_tambah() {
@@ -437,21 +445,29 @@ class Admin extends CI_Controller {
 		}
 		$data['title'] = 'History Absensi';
 		$data['admin_list'] = $this->db->order_by('nama_admin', 'ASC')->get('tbl_admin')->result_array();
-		$this->db->select('a.*, u.nama_admin, u.level_admin, s.nama_shift, l.nama_lokasi')
-			->from('tbl_absensi a')
-			->join('tbl_admin u', 'a.kd_admin = u.kd_admin', 'left')
-			->join('tbl_shift s', 'a.kd_shift = s.kd_shift', 'left')
-			->join('tbl_lokasi l', 'a.kd_lokasi = l.kd_lokasi', 'left');
+		$this->db->select('j.*, u.nama_admin, u.level_admin, s.nama_shift, l.nama_lokasi, a.kd_absensi, a.status_kehadiran')
+			->from('tbl_absensi_jadwal j')
+			->join('tbl_admin u', 'j.kd_admin = u.kd_admin', 'left')
+			->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
+			->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
+			->join('tbl_absensi a', 'j.kd_admin = a.kd_admin AND j.tanggal = a.tanggal', 'left');
 		if ($kd_admin) {
-			$this->db->where('a.kd_admin', $kd_admin);
+			$this->db->where('j.kd_admin', $kd_admin);
 		}
 		if ($tanggal) {
-			$this->db->where('a.tanggal', $tanggal);
+			$this->db->where('j.tanggal', $tanggal);
 		}
-		$data['history'] = $this->db->order_by('a.tanggal', 'DESC')->get()->result_array();
+		$data['history'] = $this->db->order_by('j.tanggal', 'DESC')->get()->result_array();
 		foreach ($data['history'] as &$row) {
-			$row['rekap_kehadiran'] = $row['status_kehadiran'] === 'complete' ? 'Hadir' : 'Tidak Hadir';
+			if (empty($row['kd_absensi'])) {
+				$row['rekap_kehadiran'] = 'Belum Absen';
+			} elseif ($row['status_kehadiran'] === 'complete') {
+				$row['rekap_kehadiran'] = 'Hadir';
+			} else {
+				$row['rekap_kehadiran'] = 'Tidak Hadir';
+			}
 		}
+		unset($row);
 		unset($row);
 		$data['selected_admin'] = $kd_admin;
 		$data['selected_date'] = $tanggal;
@@ -498,13 +514,77 @@ class Admin extends CI_Controller {
 		}
 
 		$data['title'] = 'Detail History Absensi';
-		$data['attendance'] = $attendance;
-		$data['scans'] = $this->db
+		$attendance['scan_summary'] = 'Tidak ada scan';
+		$scan_rows = $this->db
 			->where('kd_absensi', $kd_absensi)
 			->order_by('FIELD(stage, "masuk", "tengah", "pulang" )', null, false)
 			->get('tbl_absensi_scan')
 			->result_array();
+		if (!empty($scan_rows)) {
+			$stage_labels = array('masuk' => 'Pagi', 'tengah' => 'Siang', 'pulang' => 'Pulang');
+			$stages = array();
+			foreach ($scan_rows as $scan_row) {
+				if (!in_array($scan_row['stage'], $stages, true)) {
+					$stages[] = $scan_row['stage'];
+				}
+			}
+			$labels = array();
+			foreach ($stages as $stage) {
+				if (isset($stage_labels[$stage])) {
+					$labels[] = $stage_labels[$stage];
+				}
+			}
+			if (!empty($labels)) {
+				$attendance['scan_summary'] = 'Hadir ' . implode(', ', $labels);
+			}
+		}
+		$data['attendance'] = $attendance;
+		$data['scans'] = $scan_rows;
 		$this->load->view('history_absensi_detail', $data);
+	}
+
+	public function history_absensi_scan_hapus($scan_id = '') {
+		if (!$scan_id) {
+			redirect('admin/history_absensi');
+		}
+
+		$scan = $this->db->where('id', $scan_id)->get('tbl_absensi_scan')->row_array();
+		if ($scan) {
+			$kd_absensi = $scan['kd_absensi'];
+			$this->db->where('id', $scan_id)->delete('tbl_absensi_scan');
+
+			$attendance = $this->db->where('kd_absensi', $kd_absensi)->get('tbl_absensi')->row_array();
+			if ($attendance) {
+				$complete = $this->Attendance_model->is_attendance_complete($kd_absensi, null);
+				$this->db->where('kd_absensi', $kd_absensi)->update('tbl_absensi', array(
+					'status_kehadiran' => $complete ? 'complete' : 'in progress',
+					'updated_at' => date('Y-m-d H:i:s'),
+				));
+			}
+
+			$this->session->set_flashdata('success', 'Scan absensi berhasil dihapus.');
+			redirect('admin/history_absensi_detail/' . $kd_absensi);
+		}
+
+		redirect('admin/history_absensi');
+	}
+
+	public function history_absensi_hapus($kd_absensi = '') {
+		if (!$kd_absensi) {
+			redirect('admin/history_absensi');
+		}
+
+		$attendance = $this->db->where('kd_absensi', $kd_absensi)->get('tbl_absensi')->row_array();
+		if ($attendance) {
+			$this->db->where('kd_absensi', $kd_absensi)->delete('tbl_absensi_scan');
+			$this->db->where('kd_absensi', $kd_absensi)->delete('tbl_absensi');
+			$this->session->set_flashdata('success', 'Data absensi berhasil dihapus.');
+		} else {
+			$this->session->set_flashdata('success', 'Absensi tidak ditemukan.');
+		}
+
+		redirect('admin/history_absensi');
+
 	}
 }
 

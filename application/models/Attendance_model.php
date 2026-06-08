@@ -185,6 +185,16 @@ class Attendance_model extends CI_Model {
             ->get('tbl_absensi')
             ->row_array();
 
+        if (!$valid_location) {
+            return array(
+                'success' => false,
+                'message' => 'Posisi Anda berada di luar radius lokasi. Jarak: ' . round($distance, 2) . ' meter. Pastikan berada dalam radius ' . (int)$location['radius_meter'] . ' meter.',
+                'distance' => round($distance, 2),
+                'valid_location' => false,
+                'stage' => $stage,
+            );
+        }
+
         if (empty($attendance)) {
             $attendance = array(
                 'kd_absensi' => $this->generate_absensi_code(),
@@ -205,8 +215,8 @@ class Attendance_model extends CI_Model {
             'latitude' => $latitude,
             'longitude' => $longitude,
             'jarak_meter' => round($distance, 2),
-            'status_valid' => $valid_location ? 1 : 0,
-            'message' => $valid_location ? 'Lokasi valid' : 'Diluar radius lokasi',
+            'status_valid' => 1,
+            'message' => 'Lokasi valid',
             'photo_base64' => $photo_base64,
             'created_at' => date('Y-m-d H:i:s'),
         );
@@ -239,9 +249,29 @@ class Attendance_model extends CI_Model {
     }
 
     private function generate_absensi_code() {
-        $row = $this->db->select('COUNT(*) as total')->get('tbl_absensi')->row_array();
-        $count = isset($row['total']) ? (int)$row['total'] + 1 : 1;
-        return 'ABS' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        $prefix = 'ABS';
+        $row = $this->db
+            ->select('kd_absensi')
+            ->like('kd_absensi', $prefix, 'after')
+            ->order_by('kd_absensi', 'DESC')
+            ->limit(1)
+            ->get('tbl_absensi')
+            ->row_array();
+
+        $count = 1;
+        if (!empty($row['kd_absensi']) && preg_match('/^ABS(\d+)$/', $row['kd_absensi'], $matches)) {
+            $count = (int)$matches[1] + 1;
+        }
+
+        do {
+            $code = $prefix . str_pad($count, 6, '0', STR_PAD_LEFT);
+            $exists = $this->db->where('kd_absensi', $code)->count_all_results('tbl_absensi') > 0;
+            if ($exists) {
+                $count++;
+            }
+        } while ($exists);
+
+        return $code;
     }
 
     private function calculate_distance($lat1, $lon1, $lat2, $lon2) {

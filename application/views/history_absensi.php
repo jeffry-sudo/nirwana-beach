@@ -85,12 +85,21 @@
                   <td>
                     <?php if ($row['rekap_kehadiran'] === 'Hadir') : ?>
                       <span class="badge badge-success">Hadir</span>
+                    <?php elseif ($row['rekap_kehadiran'] === 'Belum Absen') : ?>
+                      <span class="badge badge-secondary">Belum Absen</span>
                     <?php else : ?>
                       <span class="badge badge-danger">Tidak Hadir</span>
                     <?php endif; ?>
                   </td>
-                  <td><?php echo ucfirst($row['status_kehadiran']); ?></td>
-                  <td><a href="<?php echo base_url('admin/history_absensi_detail/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-info">Detail</a></td>
+                  <td><?php echo !empty($row['status_kehadiran']) ? ucfirst($row['status_kehadiran']) : 'Belum Absen'; ?></td>
+                  <td>
+                    <?php if (!empty($row['kd_absensi'])) : ?>
+                      <a href="<?php echo base_url('admin/history_absensi_detail/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-info">Detail</a>
+                      <a href="<?php echo base_url('admin/history_absensi_hapus/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus absensi ini beserta semua scan validnya?');">Hapus</a>
+                    <?php else : ?>
+                      -
+                    <?php endif; ?>
+                  </td>
                 </tr>
               <?php endforeach; ?>
             </tbody>

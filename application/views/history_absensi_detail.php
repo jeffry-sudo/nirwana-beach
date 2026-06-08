@@ -18,6 +18,7 @@
         </div>
         <div class="col-sm-6 text-right">
           <a href="<?php echo base_url('admin/history_absensi'); ?>" class="btn btn-secondary">Kembali</a>
+          <a href="<?php echo base_url('admin/history_absensi_hapus/' . $attendance['kd_absensi']); ?>" class="btn btn-danger ml-2" onclick="return confirm('Hapus absensi ini beserta semua scan validnya?');">Hapus</a>
         </div>
       </div>
       <?php if ($this->session->flashdata('success')): ?>
@@ -51,8 +52,10 @@
               <dl class="row">
                 <dt class="col-sm-5">Lokasi</dt>
                 <dd class="col-sm-7"><?php echo $attendance['nama_lokasi']; ?></dd>
+                <dt class="col-sm-5">Ringkasan Scan</dt>
+                <dd class="col-sm-7"><?php echo !empty($attendance['scan_summary']) ? $attendance['scan_summary'] : 'Tidak ada scan'; ?></dd>
                 <dt class="col-sm-5">Status Kehadiran</dt>
-                <dd class="col-sm-7"><?php echo ucfirst($attendance['status_kehadiran']); ?></dd>
+                <dd class="col-sm-7"><?php echo !empty($attendance['status_kehadiran']) ? ucfirst($attendance['status_kehadiran']) : 'Belum Absen'; ?></dd>
                 <?php if (!empty($attendance['reason_incomplete'])): ?>
                   <dt class="col-sm-5">Alasan Tidak Hadir</dt>
                   <dd class="col-sm-7"><?php echo nl2br(htmlspecialchars($attendance['reason_incomplete'], ENT_QUOTES, 'UTF-8')); ?></dd>
@@ -98,6 +101,7 @@
                     <th>Status</th>
                     <th>Pesan</th>
                     <th>Foto</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -118,6 +122,9 @@
                         <?php else: ?>
                           -
                         <?php endif; ?>
+                      </td>
+                      <td>
+                        <a href="<?php echo base_url('admin/history_absensi_scan_hapus/' . $scan['id']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus scan ini?');">Hapus</a>
                       </td>
                     </tr>
                   <?php endforeach; ?>
