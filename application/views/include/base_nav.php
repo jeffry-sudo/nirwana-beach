@@ -86,6 +86,12 @@
               <p>Absensi Karyawan</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="<?php echo base_url('attendance/history') ?>" class="nav-link">
+              <i class="nav-icon fa fa-history"></i>
+              <p>History Absensi Saya</p>
+            </a>
+          </li>
           <?php if ($_SESSION['level'] == 1 || $_SESSION['level'] == 2): ?> 
           
           <li class="nav-item">

@@ -30,6 +30,13 @@
                     <button id="captureButton" class="rounded-2xl bg-indigo-600 px-4 py-3 text-white transition hover:bg-indigo-700">Ambil Foto</button>
                     <button id="submitButton" disabled class="rounded-2xl bg-emerald-600 px-4 py-3 text-white transition hover:bg-emerald-700">Kirim Scan</button>
                     <p id="statusText" class="text-sm text-slate-600"></p>
+                    <div id="locationHelper" class="mt-3 hidden rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+                        <p id="locationHelperText" class="text-sm"></p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button id="retryLocationButton" type="button" class="inline-flex items-center justify-center rounded-xl bg-white border border-amber-300 px-4 py-2 text-amber-900 transition hover:bg-amber-100">Coba Lagi Lokasi</button>
+                            <button id="openHelpButton" type="button" class="inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-white transition hover:bg-amber-700">Cara Izinkan Lokasi</button>
+                        </div>
+                    </div>
                     <p class="text-sm text-rose-600">Catatan: Tidak ada opsi upload galeri. Foto harus diambil langsung dari kamera.</p>
                 </div>
             </div>
@@ -66,6 +73,10 @@
         const captureButton = document.getElementById('captureButton');
         const submitButton = document.getElementById('submitButton');
         const statusText = document.getElementById('statusText');
+        const locationHelper = document.getElementById('locationHelper');
+        const locationHelperText = document.getElementById('locationHelperText');
+        const retryLocationButton = document.getElementById('retryLocationButton');
+        const openHelpButton = document.getElementById('openHelpButton');
         const previewCanvas = document.getElementById('previewCanvas');
         const previewContext = previewCanvas.getContext('2d');
         let capturedData = null;
@@ -77,20 +88,52 @@
                 video.srcObject = stream;
                 await video.play();
             } catch (error) {
-                statusText.textContent = 'Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.';
+                setStatus('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.', true);
             }
+        }
+
+        function showLocationHelper(message) {
+            locationHelperText.textContent = message;
+            locationHelper.classList.remove('hidden');
+        }
+
+        function hideLocationHelper() {
+            locationHelper.classList.add('hidden');
+            locationHelperText.textContent = '';
         }
 
         function refreshLocation() {
             if (!navigator.geolocation) {
-                statusText.textContent = 'Geolocation tidak didukung oleh browser ini.';
+                setStatus('Geolocation tidak didukung oleh browser ini.', true);
+                showLocationHelper('Gunakan browser modern dengan dukungan lokasi, dan jalankan dari koneksi HTTPS.');
                 return;
             }
+
+            setStatus('Mencari lokasi perangkat...', false);
+            hideLocationHelper();
+
             navigator.geolocation.getCurrentPosition((position) => {
                 currentPosition = position.coords;
-                statusText.textContent = `Lokasi ditemukan: ${currentPosition.latitude.toFixed(6)}, ${currentPosition.longitude.toFixed(6)}.`;
+                setStatus(`Lokasi ditemukan: ${currentPosition.latitude.toFixed(6)}, ${currentPosition.longitude.toFixed(6)}.`, false);
             }, (error) => {
-                statusText.textContent = 'Tidak dapat mengambil lokasi. Pastikan izin GPS diberikan.';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        setStatus('Izin lokasi ditolak. Absensi tidak dapat dilanjutkan tanpa izin GPS.', true);
+                        showLocationHelper('Klik Izinkan Lokasi di browser Anda, lalu muat ulang halaman. Jika sudah ditolak, buka pengaturan situs di browser dan aktifkan lokasi untuk alamat ini.');
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        setStatus('Lokasi perangkat tidak tersedia. Pastikan GPS aktif atau berada di area terbuka.', true);
+                        showLocationHelper('Coba lagi di area yang lebih terbuka atau dekat jendela, lalu tekan "Coba Lagi Lokasi".');
+                        break;
+                    case error.TIMEOUT:
+                        setStatus('Permintaan lokasi timeout. Coba lagi.', true);
+                        showLocationHelper('Tekan tombol "Coba Lagi Lokasi" untuk mencoba kembali.');
+                        break;
+                    default:
+                        setStatus('Gagal mengambil lokasi. Pastikan izin lokasi sudah diberikan.', true);
+                        showLocationHelper('Periksa izin lokasi di browser dan coba lagi.');
+                        break;
+                }
             }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
@@ -111,6 +154,14 @@
             capturedData = previewCanvas.toDataURL('image/jpeg', 0.82);
             submitButton.disabled = false;
             setStatus('Foto berhasil diambil. Siap untuk dikirim.', false);
+        });
+
+        retryLocationButton.addEventListener('click', () => {
+            refreshLocation();
+        });
+
+        openHelpButton.addEventListener('click', () => {
+            showLocationHelper('Jika izin lokasi belum aktif, buka ikon gembok di address bar browser Anda, set Location/Lokasi menjadi Allow/Izinkan, lalu muat ulang halaman.');
         });
 
         submitButton.addEventListener('click', async () => {
@@ -142,7 +193,7 @@
                     submitButton.disabled = false;
                 }
             } catch (error) {
-                statusText.textContent = 'Gagal mengirim scan. Coba lagi.';
+                setStatus('Gagal mengirim scan. Coba lagi.', true);
                 submitButton.disabled = false;
             }
         });

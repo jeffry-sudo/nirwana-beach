@@ -14,6 +14,7 @@
             <div class="mt-4 flex flex-wrap gap-3">
                 <a href="<?php echo site_url('home'); ?>" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-white transition hover:bg-indigo-700">Menu Utama</a>
                 <a href="<?php echo site_url('attendance'); ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-200 px-4 py-2 text-slate-700 transition hover:bg-slate-300">Halaman Absensi</a>
+                <a href="<?php echo site_url('attendance/history'); ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-200 px-4 py-2 text-slate-700 transition hover:bg-slate-300">History Absensi</a>
             </div>
             <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-slate-700"><?php echo $summary['text']; ?></p>

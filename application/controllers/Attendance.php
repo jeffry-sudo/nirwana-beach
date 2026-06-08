@@ -72,4 +72,60 @@ class Attendance extends CI_Controller {
         $save = $this->Attendance_model->save_scan($kd_admin, $stage, $latitude, $longitude, $photo);
         echo json_encode($save);
     }
+
+    public function history() {
+        $kd_admin = $this->session->userdata('kd_admin');
+
+        $this->db->select('j.*, s.nama_shift, l.nama_lokasi, a.kd_absensi, a.status_kehadiran')
+            ->from('tbl_absensi_jadwal j')
+            ->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
+            ->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
+            ->join('tbl_absensi a', 'j.kd_admin = a.kd_admin AND j.tanggal = a.tanggal', 'left')
+            ->where('j.kd_admin', $kd_admin)
+            ->order_by('j.tanggal', 'DESC');
+
+        $history = $this->db->get()->result_array();
+        foreach ($history as &$row) {
+            if (empty($row['kd_absensi'])) {
+                $row['rekap_kehadiran'] = 'Belum Absen';
+            } elseif ($row['status_kehadiran'] === 'complete') {
+                $row['rekap_kehadiran'] = 'Hadir';
+            } else {
+                $row['rekap_kehadiran'] = 'Tidak Hadir';
+            }
+        }
+        unset($row);
+
+        $data['title'] = 'History Absensi Saya';
+        $data['history'] = $history;
+        $this->load->view('attendance/history', $data);
+    }
+
+    public function history_detail($kd_absensi = '') {
+        $kd_admin = $this->session->userdata('kd_admin');
+
+        $attendance = $this->db
+            ->select('a.*, s.nama_shift, l.nama_lokasi')
+            ->from('tbl_absensi a')
+            ->join('tbl_shift s', 'a.kd_shift = s.kd_shift', 'left')
+            ->join('tbl_lokasi l', 'a.kd_lokasi = l.kd_lokasi', 'left')
+            ->where('a.kd_absensi', $kd_absensi)
+            ->where('a.kd_admin', $kd_admin)
+            ->get()
+            ->row_array();
+
+        if (!$attendance) {
+            redirect('attendance/history');
+        }
+
+        $data['title'] = 'Detail History Absensi';
+        $data['attendance'] = $attendance;
+        $data['scans'] = $this->db
+            ->where('kd_absensi', $kd_absensi)
+            ->order_by('FIELD(stage, "masuk", "tengah", "pulang")', null, false)
+            ->get('tbl_absensi_scan')
+            ->result_array();
+
+        $this->load->view('attendance/history_detail', $data);
+    }
 }

@@ -173,18 +173,61 @@
     status.classList.toggle('text-muted', !isError);
   }
 
+  function handleGeolocationError(error) {
+    let message = 'Tidak dapat mengambil lokasi perangkat. Pastikan GPS dan izin lokasi diaktifkan.';
+    if (error.code === 1) {
+      message = 'Izin lokasi ditolak. Izinkan lokasi di browser untuk menggunakan fitur ini.';
+    } else if (error.code === 2) {
+      message = 'Lokasi tidak tersedia. Coba lagi di area dengan sinyal GPS yang lebih baik.';
+    } else if (error.code === 3) {
+      message = 'Waktu tunggu lokasi habis. Pastikan GPS aktif dan ulangi.';
+    }
+    setLocationStatus(message, true);
+  }
+
   function locateDevice() {
     if (!navigator.geolocation) {
       setLocationStatus('Geolocation tidak didukung oleh browser ini.', true);
       return;
     }
-    setLocationStatus('Mencari lokasi perangkat...', false);
-    navigator.geolocation.getCurrentPosition(function(position) {
-      setInitialLocation(position.coords.latitude, position.coords.longitude);
-      setLocationStatus('Lokasi perangkat berhasil diatur ke peta.', false);
+
+    setLocationStatus('Mencari lokasi perangkat dengan akurasi tinggi...', false);
+    let bestPosition = null;
+    const maxDuration = 15000;
+    const watchId = navigator.geolocation.watchPosition(function(position) {
+      const accuracy = position.coords.accuracy || 0;
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
+        bestPosition = position;
+        setInitialLocation(lat, lon);
+      }
+      if (accuracy <= 100) {
+        setLocationStatus(`Lokasi perangkat ditemukan dengan akurasi ${accuracy.toFixed(1)}m.`, false);
+        navigator.geolocation.clearWatch(watchId);
+      } else {
+        setLocationStatus(`Lokasi ditemukan, akurasi ${accuracy.toFixed(1)}m. Tunggu untuk hasil lebih baik atau ulangi jika perlu.`, false);
+      }
     }, function(error) {
-      setLocationStatus('Tidak dapat mengambil lokasi perangkat. Pastikan GPS diaktifkan.', true);
-    }, { enableHighAccuracy: true, timeout: 10000 });
+      navigator.geolocation.clearWatch(watchId);
+      handleGeolocationError(error);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: maxDuration
+    });
+
+    setTimeout(function() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (bestPosition) {
+        const accuracy = bestPosition.coords.accuracy || 0;
+        setLocationStatus(`Lokasi diset dengan akurasi ${accuracy.toFixed(1)}m. Jika tidak akurat, coba ulangi dan pastikan GPS/izin lokasi aktif.`, accuracy > 150);
+      } else {
+        setLocationStatus('Tidak dapat mengambil lokasi perangkat. Pastikan GPS dan izin lokasi diaktifkan.', true);
+      }
+    }, maxDuration + 500);
   }
 
   if (!hasExistingCoords && navigator.geolocation) {

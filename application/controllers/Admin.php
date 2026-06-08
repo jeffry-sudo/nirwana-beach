@@ -347,6 +347,7 @@ class Admin extends CI_Controller {
 		$this->form_validation->set_rules('kd_shift', 'Shift', 'trim|required');
 		$this->form_validation->set_rules('kd_lokasi', 'Lokasi', 'trim|required');
 		$this->form_validation->set_rules('bulan', 'Bulan', 'trim|required');
+		$this->form_validation->set_rules('tanggal[]', 'Tanggal', 'required');
 
 		$data['shift'] = $this->db->order_by('kd_shift', 'ASC')->get('tbl_shift')->result_array();
 		$data['lokasi'] = $this->db->order_by('kd_lokasi', 'ASC')->get('tbl_lokasi')->result_array();
@@ -421,11 +422,15 @@ class Admin extends CI_Controller {
 			$data['jadwal'] = $jadwal;
 			$this->load->view('formjadwal', $data);
 		} else {
+			$tanggal = $this->input->post('tanggal');
+			if (is_array($tanggal)) {
+				$tanggal = reset($tanggal);
+			}
 			$update = array(
 				'kd_admin' => $this->input->post('kd_admin'),
 				'kd_shift' => $this->input->post('kd_shift'),
 				'kd_lokasi' => $this->input->post('kd_lokasi'),
-				'tanggal' => $this->input->post('tanggal'),
+				'tanggal' => $tanggal,
 			);
 			$this->db->where('id', $id)->update('tbl_absensi_jadwal', $update);
 			redirect('admin/jadwal');

@@ -31,7 +31,7 @@
         <div class="col-md-8">
           <div class="card card-primary">
             <div class="card-header"><h3 class="card-title">Form Jadwal</h3></div>
-            <form action="" method="post">
+            <form action="<?php echo isset($jadwal) && $jadwal ? base_url('admin/jadwal_edit/' . $jadwal['id']) : base_url('admin/jadwal_tambah'); ?>" method="post">
               <div class="card-body">
                 <div class="form-group">
                   <label for="kd_admin">Karyawan</label>
@@ -60,17 +60,24 @@
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label for="bulan">Bulan</label>
-                  <input type="month" class="form-control" name="bulan" id="bulan" value="<?php echo set_value('bulan', date('Y-m')); ?>" required>
-                </div>
-                <div class="form-group">
-                  <label for="tanggal">Tanggal</label>
-                  <div id="tanggal-container" class="row gap-2"></div>
-                  <?php if (!empty($date_error)) : ?>
-                    <small class="text-danger"><?php echo $date_error; ?></small>
-                  <?php endif; ?>
-                </div>
+                <?php if (isset($jadwal) && $jadwal) : ?>
+                  <div class="form-group">
+                    <label for="tanggal">Tanggal</label>
+                    <input type="date" class="form-control" name="tanggal" id="tanggal" value="<?php echo set_value('tanggal', $jadwal['tanggal']); ?>" required>
+                  </div>
+                <?php else : ?>
+                  <div class="form-group">
+                    <label for="bulan">Bulan</label>
+                    <input type="month" class="form-control" name="bulan" id="bulan" value="<?php echo set_value('bulan', date('Y-m')); ?>" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="tanggal">Tanggal</label>
+                    <div id="tanggal-container" class="row gap-2"></div>
+                    <?php if (!empty($date_error)) : ?>
+                      <small class="text-danger"><?php echo $date_error; ?></small>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
               </div>
               <div class="card-footer">
                 <button type="submit" class="btn btn-primary">Simpan</button>
@@ -117,6 +124,9 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     const monthInput = document.getElementById('bulan');
+    if (!monthInput) {
+      return;
+    }
     const selectedDates = <?php echo json_encode(isset($selected_dates) ? $selected_dates : array()); ?>;
     generateTanggalSelector(monthInput.value, selectedDates);
     monthInput.addEventListener('change', function () {
