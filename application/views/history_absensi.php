@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <?php $this->load->view('include/base_css'); ?>
   <link rel="stylesheet" href="<?php echo base_url('assets') ?>/plugins/datatables/dataTables.bootstrap4.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="hold-transition sidebar-mini">
 <?php $this->load->view('include/base_nav'); ?>
@@ -95,7 +96,7 @@
                   <td>
                     <?php if (!empty($row['kd_absensi'])) : ?>
                       <a href="<?php echo base_url('admin/history_absensi_detail/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-info">Detail</a>
-                      <a href="<?php echo base_url('admin/history_absensi_hapus/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus absensi ini beserta semua scan validnya?');">Hapus</a>
+                      <a href="<?php echo base_url('admin/history_absensi_hapus/' . $row['kd_absensi']); ?>" class="btn btn-sm btn-danger swal-confirm-delete">Hapus</a>
                     <?php else : ?>
                       -
                     <?php endif; ?>
@@ -116,6 +117,26 @@
 <script>
   $(function () {
     $('#tableHistory').DataTable();
+
+    document.querySelectorAll('.swal-confirm-delete').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+          title: 'Yakin ingin menghapus?',
+          text: 'Data absensi ini beserta scan terkait akan dihapus permanen.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Ya, hapus!',
+          cancelButtonText: 'Batal'
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            window.location.href = link.getAttribute('href');
+          }
+        });
+      });
+    });
   });
 </script>
 </body>

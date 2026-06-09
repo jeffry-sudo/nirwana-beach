@@ -17,32 +17,32 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto rounded-2xl bg-white p-6 shadow-sm">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="w-full overflow-x-auto rounded-2xl bg-white p-3 shadow-sm sm:p-6">
+            <table class="min-w-[720px] w-full table-auto divide-y divide-slate-200 text-xs sm:text-sm">
                 <thead class="bg-slate-50 text-slate-600">
                     <tr>
-                        <th class="px-4 py-3 text-left font-medium">No</th>
-                        <th class="px-4 py-3 text-left font-medium">Tanggal</th>
-                        <th class="px-4 py-3 text-left font-medium">Shift</th>
-                        <th class="px-4 py-3 text-left font-medium">Lokasi</th>
-                        <th class="px-4 py-3 text-left font-medium">Rekap Kehadiran</th>
-                        <th class="px-4 py-3 text-left font-medium">Aksi</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">No</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">Tanggal</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">Shift</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">Lokasi</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">Rekap Kehadiran</th>
+                        <th class="px-3 py-3 text-left font-medium sm:px-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
                     <?php if (empty($history)): ?>
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-slate-500">Belum ada riwayat absensi.</td>
+                            <td colspan="6" class="px-3 py-6 text-center text-slate-500 sm:px-4">Belum ada riwayat absensi.</td>
                         </tr>
                     <?php else: ?>
                         <?php $no = 1; foreach ($history as $row): ?>
                             <tr>
-                                <td class="px-4 py-3"><?php echo $no++; ?></td>
-                                <td class="px-4 py-3"><?php echo $row['tanggal']; ?></td>
-                                <td class="px-4 py-3"><?php echo $row['nama_shift']; ?></td>
-                                <td class="px-4 py-3"><?php echo $row['nama_lokasi']; ?></td>
-                                <td class="px-4 py-3"><?php echo $row['rekap_kehadiran']; ?></td>
-                                <td class="px-4 py-3">
+                                <td class="px-3 py-3 align-top sm:px-4"><?php echo $no++; ?></td>
+                                <td class="px-3 py-3 align-top sm:px-4"><?php echo $row['tanggal']; ?></td>
+                                <td class="px-3 py-3 align-top sm:px-4"><?php echo $row['nama_shift']; ?></td>
+                                <td class="px-3 py-3 align-top sm:px-4"><?php echo $row['nama_lokasi']; ?></td>
+                                <td class="px-3 py-3 align-top sm:px-4"><?php echo $row['rekap_kehadiran']; ?></td>
+                                <td class="px-3 py-3 align-top sm:px-4">
                                     <?php if (!empty($row['kd_absensi'])): ?>
                                         <a href="<?php echo site_url('attendance/history_detail/' . $row['kd_absensi']); ?>" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 py-2 text-white transition hover:bg-indigo-700">Detail</a>
                                     <?php else: ?>

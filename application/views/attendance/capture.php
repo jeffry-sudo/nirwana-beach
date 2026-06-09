@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $title; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
     <div class="max-w-4xl mx-auto p-6">
@@ -175,6 +176,7 @@
 
             const formData = new FormData();
             formData.append('stage', '<?php echo $stage; ?>');
+            formData.append('schedule_id', '<?php echo $schedule['id'] ?? ''; ?>');
             formData.append('latitude', currentPosition.latitude);
             formData.append('longitude', currentPosition.longitude);
             formData.append('photo', capturedData);
@@ -186,9 +188,21 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    setStatus(result.message, false);
-                    window.location.href = '<?php echo site_url('attendance'); ?>';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Scan berhasil',
+                        text: result.message,
+                        confirmButtonColor: '#4f46e5'
+                    }).then(() => {
+                        window.location.href = '<?php echo site_url('attendance'); ?>';
+                    });
                 } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal absen',
+                        text: result.message,
+                        confirmButtonColor: '#4f46e5'
+                    });
                     setStatus(result.message, true);
                     submitButton.disabled = false;
                 }

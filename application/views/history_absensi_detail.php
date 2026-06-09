@@ -6,6 +6,7 @@
   <title><?php echo $title ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <?php $this->load->view('include/base_css'); ?>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="hold-transition sidebar-mini">
 <?php $this->load->view('include/base_nav'); ?>
@@ -18,7 +19,7 @@
         </div>
         <div class="col-sm-6 text-right">
           <a href="<?php echo base_url('admin/history_absensi'); ?>" class="btn btn-secondary">Kembali</a>
-          <a href="<?php echo base_url('admin/history_absensi_hapus/' . $attendance['kd_absensi']); ?>" class="btn btn-danger ml-2" onclick="return confirm('Hapus absensi ini beserta semua scan validnya?');">Hapus</a>
+          <a href="<?php echo base_url('admin/history_absensi_hapus/' . $attendance['kd_absensi']); ?>" class="btn btn-danger ml-2 swal-confirm-delete">Hapus</a>
         </div>
       </div>
       <?php if ($this->session->flashdata('success')): ?>
@@ -124,7 +125,7 @@
                         <?php endif; ?>
                       </td>
                       <td>
-                        <a href="<?php echo base_url('admin/history_absensi_scan_hapus/' . $scan['id']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus scan ini?');">Hapus</a>
+                        <a href="<?php echo base_url('admin/history_absensi_scan_hapus/' . $scan['id']); ?>" class="btn btn-sm btn-danger swal-confirm-scan">Hapus</a>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -184,6 +185,46 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.swal-confirm-delete').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+          title: 'Yakin ingin menghapus?',
+          text: 'Absensi ini beserta semua scan terkait akan dihapus permanen.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Ya, hapus!',
+          cancelButtonText: 'Batal'
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            window.location.href = link.getAttribute('href');
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll('.swal-confirm-scan').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+          title: 'Hapus scan ini?',
+          text: 'Scan yang dihapus tidak bisa dikembalikan.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Ya, hapus scan',
+          cancelButtonText: 'Batal'
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            window.location.href = link.getAttribute('href');
+          }
+        });
+      });
+    });
+
     document.querySelectorAll('.photo-preview-link').forEach(function (link) {
       link.addEventListener('click', function (event) {
         event.preventDefault();

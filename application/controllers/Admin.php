@@ -455,7 +455,7 @@ class Admin extends CI_Controller {
 			->join('tbl_admin u', 'j.kd_admin = u.kd_admin', 'left')
 			->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
 			->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
-			->join('tbl_absensi a', 'j.kd_admin = a.kd_admin AND j.tanggal = a.tanggal', 'left');
+			->join('tbl_absensi a', 'j.id = a.id_jadwal', 'left');
 		if ($kd_admin) {
 			$this->db->where('j.kd_admin', $kd_admin);
 		}

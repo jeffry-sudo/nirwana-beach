@@ -6,17 +6,23 @@ class Attendance_model extends CI_Model {
         parent::__construct();
     }
 
-    public function get_today_schedule($kd_admin) {
+    public function get_today_schedules($kd_admin) {
         $today = date('Y-m-d');
-        $rows = $this->db
+
+        return $this->db
             ->select('j.*, s.nama_shift, s.jam_mulai, s.jam_selesai, s.masuk_mulai, s.masuk_selesai, s.tengah_mulai, s.tengah_selesai, s.pulang_mulai, s.pulang_selesai, l.nama_lokasi, l.latitude, l.longitude, l.radius_meter')
             ->from('tbl_absensi_jadwal j')
             ->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
             ->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
             ->where('j.kd_admin', $kd_admin)
             ->where('j.tanggal', $today)
+            ->order_by('s.jam_mulai', 'ASC')
             ->get()
             ->result_array();
+    }
+
+    public function get_today_schedule($kd_admin) {
+        $rows = $this->get_today_schedules($kd_admin);
 
         if (empty($rows)) {
             return null;
@@ -26,6 +32,7 @@ class Attendance_model extends CI_Model {
             return $rows[0];
         }
 
+        $today = date('Y-m-d');
         $now = time();
         foreach ($rows as $row) {
             $start = strtotime($today . ' ' . ($row['jam_mulai'] ?? '00:00:00'));
@@ -39,11 +46,32 @@ class Attendance_model extends CI_Model {
         return $rows[0];
     }
 
-    public function get_today_scan_status($kd_admin) {
+    public function get_schedule_by_id($kd_admin, $schedule_id) {
+        return $this->db
+            ->select('j.*, s.nama_shift, s.jam_mulai, s.jam_selesai, s.masuk_mulai, s.masuk_selesai, s.tengah_mulai, s.tengah_selesai, s.pulang_mulai, s.pulang_selesai, l.nama_lokasi, l.latitude, l.longitude, l.radius_meter')
+            ->from('tbl_absensi_jadwal j')
+            ->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
+            ->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
+            ->where('j.kd_admin', $kd_admin)
+            ->where('j.id', $schedule_id)
+            ->get()
+            ->row_array();
+    }
+
+    public function get_today_scan_status($kd_admin, $schedule_id = null) {
+        $this->ensure_schedule_link_columns_exists();
+
         $today = date('Y-m-d');
+        $schedule = $schedule_id ? $this->get_schedule_by_id($kd_admin, $schedule_id) : $this->get_today_schedule($kd_admin);
+
+        if (!$schedule) {
+            return array();
+        }
+
         $attendance = $this->db
             ->where('kd_admin', $kd_admin)
             ->where('tanggal', $today)
+            ->where('id_jadwal', $schedule['id'])
             ->get('tbl_absensi')
             ->row_array();
 
@@ -77,12 +105,21 @@ class Attendance_model extends CI_Model {
         }
     }
 
-    public function get_today_attendance($kd_admin) {
-        $today = date('Y-m-d');
+    public function get_today_attendance($kd_admin, $schedule_id = null) {
+        $this->ensure_schedule_link_columns_exists();
         $this->ensure_reason_column_exists();
+
+        $today = date('Y-m-d');
+        $schedule = $schedule_id ? $this->get_schedule_by_id($kd_admin, $schedule_id) : $this->get_today_schedule($kd_admin);
+
+        if (!$schedule) {
+            return null;
+        }
+
         return $this->db
             ->where('kd_admin', $kd_admin)
             ->where('tanggal', $today)
+            ->where('id_jadwal', $schedule['id'])
             ->get('tbl_absensi')
             ->row_array();
     }
@@ -165,8 +202,10 @@ class Attendance_model extends CI_Model {
         return null;
     }
 
-    public function save_scan($kd_admin, $stage, $latitude, $longitude, $photo_base64) {
-        $schedule = $this->get_today_schedule($kd_admin);
+    public function save_scan($kd_admin, $stage, $latitude, $longitude, $photo_base64, $schedule_id = null) {
+        $this->ensure_schedule_link_columns_exists();
+
+        $schedule = $schedule_id ? $this->get_schedule_by_id($kd_admin, $schedule_id) : $this->get_today_schedule($kd_admin);
         if (!$schedule) {
             return array('success' => false, 'message' => 'Tidak ada jadwal shift untuk hari ini.');
         }
@@ -176,13 +215,13 @@ class Attendance_model extends CI_Model {
             return array('success' => false, 'message' => 'Tahap absen tidak valid untuk peran ini.');
         }
 
-        $scan_status = $this->get_today_scan_status($kd_admin);
+        $scan_status = $this->get_today_scan_status($kd_admin, $schedule['id']);
         $existing = array_column($scan_status, 'stage');
         if (in_array($stage, $existing, true)) {
             return array('success' => false, 'message' => 'Tahap absen ini sudah dilakukan.');
         }
 
-        $current_stage = $this->get_available_stage($schedule, $scan_status);
+        $current_stage = $this->get_available_stage($schedule, $scan_status, $this->session->userdata('level'));
         if ($current_stage !== $stage) {
             return array('success' => false, 'message' => 'Tahap absen tidak tersedia pada waktu ini.');
         }
@@ -202,6 +241,7 @@ class Attendance_model extends CI_Model {
         $attendance = $this->db
             ->where('kd_admin', $kd_admin)
             ->where('tanggal', date('Y-m-d'))
+            ->where('id_jadwal', $schedule['id'])
             ->get('tbl_absensi')
             ->row_array();
 
@@ -218,6 +258,7 @@ class Attendance_model extends CI_Model {
         if (empty($attendance)) {
             $attendance = array(
                 'kd_absensi' => $this->generate_absensi_code(),
+                'id_jadwal' => $schedule['id'],
                 'kd_admin' => $kd_admin,
                 'tanggal' => date('Y-m-d'),
                 'kd_shift' => $schedule['kd_shift'],
@@ -230,6 +271,7 @@ class Attendance_model extends CI_Model {
 
         $scan = array(
             'kd_absensi' => $attendance['kd_absensi'],
+            'id_jadwal' => $schedule['id'],
             'stage' => $stage,
             'waktu_scan' => date('Y-m-d H:i:s'),
             'latitude' => $latitude,
@@ -266,6 +308,18 @@ class Attendance_model extends CI_Model {
             'valid_location' => $valid_location,
             'stage' => $stage,
         );
+    }
+
+    private function ensure_schedule_link_columns_exists() {
+        $column = $this->db->query("SHOW COLUMNS FROM tbl_absensi LIKE 'id_jadwal'")->row_array();
+        if (!$column) {
+            $this->db->query("ALTER TABLE tbl_absensi ADD COLUMN id_jadwal INT NULL AFTER kd_absensi");
+        }
+
+        $column = $this->db->query("SHOW COLUMNS FROM tbl_absensi_scan LIKE 'id_jadwal'")->row_array();
+        if (!$column) {
+            $this->db->query("ALTER TABLE tbl_absensi_scan ADD COLUMN id_jadwal INT NULL AFTER kd_absensi");
+        }
     }
 
     private function generate_absensi_code() {

@@ -16,16 +16,43 @@ class Attendance extends CI_Controller {
         $kd_admin = $this->session->userdata('kd_admin');
         $user_level = $this->session->userdata('level');
         $data['title'] = 'Absensi Karyawan';
-        $data['schedule'] = $this->Attendance_model->get_today_schedule($kd_admin);
-        $data['scan_status'] = $this->Attendance_model->get_today_scan_status($kd_admin);
-        $data['attendance'] = $this->Attendance_model->get_today_attendance($kd_admin);
+
+        $schedules = $this->Attendance_model->get_today_schedules($kd_admin);
+        $data['schedules'] = array();
         $data['allowed_stages'] = $this->Attendance_model->get_allowed_stages($user_level);
-        $data['available_stage'] = $this->Attendance_model->get_available_stage($data['schedule'], $data['scan_status'], $user_level);
-        $data['summary'] = $this->Attendance_model->build_summary($data['schedule'], $data['scan_status'], $user_level);
+
+        if (!empty($schedules)) {
+            foreach ($schedules as $schedule) {
+                $scan_status = $this->Attendance_model->get_today_scan_status($kd_admin, $schedule['id']);
+                $attendance = $this->Attendance_model->get_today_attendance($kd_admin, $schedule['id']);
+                $available_stage = $this->Attendance_model->get_available_stage($schedule, $scan_status, $user_level);
+
+                $data['schedules'][] = array(
+                    'schedule' => $schedule,
+                    'scan_status' => $scan_status,
+                    'attendance' => $attendance,
+                    'available_stage' => $available_stage,
+                    'summary' => $this->Attendance_model->build_summary($schedule, $scan_status, $user_level),
+                );
+            }
+
+            $data['schedule'] = $data['schedules'][0]['schedule'];
+            $data['scan_status'] = $data['schedules'][0]['scan_status'];
+            $data['attendance'] = $data['schedules'][0]['attendance'];
+            $data['available_stage'] = $data['schedules'][0]['available_stage'];
+            $data['summary'] = $data['schedules'][0]['summary'];
+        } else {
+            $data['schedule'] = null;
+            $data['scan_status'] = array();
+            $data['attendance'] = null;
+            $data['available_stage'] = null;
+            $data['summary'] = array('text' => 'Tidak ada jadwal shift hari ini.', 'completed' => false);
+        }
+
         $this->load->view('attendance/index', $data);
     }
 
-    public function capture($stage = null) {
+    public function capture($stage = null, $schedule_id = null) {
         $user_level = $this->session->userdata('level');
         $allowed = $this->Attendance_model->get_allowed_stages($user_level);
         if (!$stage || !in_array($stage, $allowed, true)) {
@@ -33,14 +60,14 @@ class Attendance extends CI_Controller {
         }
 
         $kd_admin = $this->session->userdata('kd_admin');
-        $schedule = $this->Attendance_model->get_today_schedule($kd_admin);
+        $schedule = $schedule_id ? $this->Attendance_model->get_schedule_by_id($kd_admin, $schedule_id) : $this->Attendance_model->get_today_schedule($kd_admin);
         if (!$schedule) {
             $this->session->set_flashdata('error', 'Tidak ada jadwal shift untuk hari ini.');
             redirect('attendance');
         }
 
-        $scan_status = $this->Attendance_model->get_today_scan_status($kd_admin);
-        $available = $this->Attendance_model->get_available_stage($schedule, $scan_status);
+        $scan_status = $this->Attendance_model->get_today_scan_status($kd_admin, $schedule['id']);
+        $available = $this->Attendance_model->get_available_stage($schedule, $scan_status, $user_level);
         if ($available !== $stage) {
             $this->session->set_flashdata('error', 'Tindakan absen untuk tahap ini belum tersedia.');
             redirect('attendance');
@@ -59,6 +86,7 @@ class Attendance extends CI_Controller {
 
         $post = $this->input->post(null, false);
         $stage = isset($post['stage']) ? $post['stage'] : null;
+        $schedule_id = isset($post['schedule_id']) ? $post['schedule_id'] : null;
         $latitude = isset($post['latitude']) ? $post['latitude'] : null;
         $longitude = isset($post['longitude']) ? $post['longitude'] : null;
         $photo = isset($post['photo']) ? $post['photo'] : null;
@@ -69,7 +97,7 @@ class Attendance extends CI_Controller {
         }
 
         $kd_admin = $this->session->userdata('kd_admin');
-        $save = $this->Attendance_model->save_scan($kd_admin, $stage, $latitude, $longitude, $photo);
+        $save = $this->Attendance_model->save_scan($kd_admin, $stage, $latitude, $longitude, $photo, $schedule_id);
         echo json_encode($save);
     }
 
@@ -80,7 +108,7 @@ class Attendance extends CI_Controller {
             ->from('tbl_absensi_jadwal j')
             ->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
             ->join('tbl_lokasi l', 'j.kd_lokasi = l.kd_lokasi', 'left')
-            ->join('tbl_absensi a', 'j.kd_admin = a.kd_admin AND j.tanggal = a.tanggal', 'left')
+            ->join('tbl_absensi a', 'j.id = a.id_jadwal', 'left')
             ->where('j.kd_admin', $kd_admin)
             ->order_by('j.tanggal', 'DESC');
 
