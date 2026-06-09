@@ -62,6 +62,7 @@
           <h3 class="card-title">Daftar Absensi</h3>
         </div>
         <div class="card-body">
+          <div class="table-responsive">
           <table id="tableHistory" class="table table-bordered table-striped">
             <thead>
               <tr>
@@ -105,6 +106,7 @@
               <?php endforeach; ?>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
