@@ -8,7 +8,7 @@ class Attendance_model extends CI_Model {
 
     public function get_today_schedule($kd_admin) {
         $today = date('Y-m-d');
-        return $this->db
+        $rows = $this->db
             ->select('j.*, s.nama_shift, s.jam_mulai, s.jam_selesai, s.masuk_mulai, s.masuk_selesai, s.tengah_mulai, s.tengah_selesai, s.pulang_mulai, s.pulang_selesai, l.nama_lokasi, l.latitude, l.longitude, l.radius_meter')
             ->from('tbl_absensi_jadwal j')
             ->join('tbl_shift s', 'j.kd_shift = s.kd_shift', 'left')
@@ -16,7 +16,27 @@ class Attendance_model extends CI_Model {
             ->where('j.kd_admin', $kd_admin)
             ->where('j.tanggal', $today)
             ->get()
-            ->row_array();
+            ->result_array();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        if (count($rows) === 1) {
+            return $rows[0];
+        }
+
+        $now = time();
+        foreach ($rows as $row) {
+            $start = strtotime($today . ' ' . ($row['jam_mulai'] ?? '00:00:00'));
+            $end = strtotime($today . ' ' . ($row['jam_selesai'] ?? '23:59:59'));
+
+            if ($start && $end && $now >= $start && $now <= $end) {
+                return $row;
+            }
+        }
+
+        return $rows[0];
     }
 
     public function get_today_scan_status($kd_admin) {
