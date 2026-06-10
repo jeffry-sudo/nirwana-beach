@@ -6,6 +6,7 @@
   <title><?php echo $title ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <?php $this->load->view('include/base_css'); ?>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 </head>
 <body class="hold-transition sidebar-mini">
 <?php $this->load->view('include/base_nav'); ?>
@@ -35,12 +36,12 @@
               <div class="card-body">
                 <div class="form-group">
                   <label for="kd_admin">Karyawan</label>
-                  <select class="form-control" name="kd_admin" id="kd_admin" required>
-                    <option value="">-- Pilih Karyawan --</option>
+                  <select class="form-control select2" name="kd_admin[]" id="kd_admin" multiple="multiple" data-placeholder="-- Pilih satu atau lebih karyawan --" required>
                     <?php foreach ($admin_list as $admin) : ?>
-                      <option value="<?php echo $admin['kd_admin']; ?>" <?php echo set_select('kd_admin', $admin['kd_admin'], isset($jadwal['kd_admin']) && $jadwal['kd_admin'] == $admin['kd_admin']); ?>><?php echo $admin['nama_admin']; ?></option>
+                      <option value="<?php echo $admin['kd_admin']; ?>" <?php echo set_select('kd_admin[]', $admin['kd_admin']); ?>><?php echo $admin['nama_admin']; ?></option>
                     <?php endforeach; ?>
                   </select>
+                  <small class="form-text text-muted">Bisa pilih lebih dari satu karyawan, dan gunakan pencarian untuk mencari nama.</small>
                 </div>
                 <div class="form-group">
                   <label for="kd_shift">Shift</label>
@@ -92,6 +93,7 @@
 </div>
 <?php $this->load->view('include/base_footer'); ?>
 <?php $this->load->view('include/base_js'); ?>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
   function generateTanggalSelector(monthValue, selectedDates) {
     const container = document.getElementById('tanggal-container');
@@ -123,6 +125,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    $('.select2').select2({
+      width: '100%',
+      allowClear: true
+    });
+
     const monthInput = document.getElementById('bulan');
     if (!monthInput) {
       return;

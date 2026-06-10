@@ -351,7 +351,7 @@ class Admin extends CI_Controller {
 	}
 
 	public function jadwal_tambah() {
-		$this->form_validation->set_rules('kd_admin', 'Karyawan', 'trim|required');
+		$this->form_validation->set_rules('kd_admin[]', 'Karyawan', 'trim|required');
 		$this->form_validation->set_rules('kd_shift', 'Shift', 'trim|required');
 		$this->form_validation->set_rules('kd_lokasi', 'Lokasi', 'trim|required');
 		$this->form_validation->set_rules('bulan', 'Bulan', 'trim|required');
@@ -378,7 +378,16 @@ class Admin extends CI_Controller {
 				return;
 			}
 
-			$kd_admin = $this->input->post('kd_admin');
+			$kd_admins = $this->input->post('kd_admin');
+			if (!is_array($kd_admins) || count($kd_admins) === 0) {
+				$data['title'] = 'Tambah Jadwal Shift';
+				$data['jadwal'] = null;
+				$data['selected_dates'] = is_array($selected_dates) ? $selected_dates : array();
+				$data['date_error'] = 'Pilih minimal satu karyawan.';
+				$this->load->view('formjadwal', $data);
+				return;
+			}
+
 			$kd_shift = $this->input->post('kd_shift');
 			$kd_lokasi = $this->input->post('kd_lokasi');
 			$inserted = 0;
@@ -387,14 +396,20 @@ class Admin extends CI_Controller {
 				if (!$tanggal_item) {
 					continue;
 				}
-				$this->db->insert('tbl_absensi_jadwal', array(
-					'kd_admin' => $kd_admin,
-					'kd_shift' => $kd_shift,
-					'kd_lokasi' => $kd_lokasi,
-					'tanggal' => $tanggal_item,
-					'created_at' => date('Y-m-d H:i:s'),
-				));
-				$inserted++;
+				foreach ($kd_admins as $kd_admin) {
+					$kd_admin = trim($kd_admin);
+					if (!$kd_admin) {
+						continue;
+					}
+					$this->db->insert('tbl_absensi_jadwal', array(
+						'kd_admin' => $kd_admin,
+						'kd_shift' => $kd_shift,
+						'kd_lokasi' => $kd_lokasi,
+						'tanggal' => $tanggal_item,
+						'created_at' => date('Y-m-d H:i:s'),
+					));
+					$inserted++;
+				}
 			}
 
 			$this->session->set_flashdata('success', $inserted > 0 ? $inserted . ' jadwal berhasil ditambahkan.' : 'Tidak ada jadwal baru yang ditambahkan karena duplikasi.');
