@@ -457,6 +457,68 @@ class Admin extends CI_Controller {
 		redirect('admin/jadwal');
 	}
 
+	public function laporan_bulanan_absensi() {
+		$user_level = $this->session->userdata('level');
+		if ((string)$user_level !== '1') {
+			show_error('You do not have permission to access this page.', 403);
+		}
+
+		$selected_month = $this->input->get('bulan', true);
+		if (!$selected_month) {
+			$selected_month = date('Y-m');
+		}
+
+		$start_date = $selected_month . '-01';
+		$end_date = date('Y-m-t', strtotime($start_date));
+
+		$report = $this->db
+			->select('a.kd_absensi, a.kd_admin, a.tanggal, a.kd_shift, a.kd_lokasi, a.status_kehadiran, a.created_at, u.nama_admin, s.nama_shift, l.nama_lokasi, COUNT(asc.id) AS total_scan')
+			->from('tbl_absensi a')
+			->join('tbl_admin u', 'a.kd_admin = u.kd_admin', 'left')
+			->join('tbl_shift s', 'a.kd_shift = s.kd_shift', 'left')
+			->join('tbl_lokasi l', 'a.kd_lokasi = l.kd_lokasi', 'left')
+			->join('tbl_absensi_scan asc', 'asc.kd_absensi = a.kd_absensi', 'left')
+			->where('a.tanggal >=', $start_date)
+			->where('a.tanggal <=', $end_date)
+			->group_by('a.kd_absensi, a.kd_admin, a.tanggal, a.kd_shift, a.kd_lokasi, a.status_kehadiran, a.created_at, u.nama_admin, s.nama_shift, l.nama_lokasi')
+			->order_by('a.tanggal', 'ASC')
+			->order_by('u.nama_admin', 'ASC')
+			->get()
+			->result_array();
+
+		$summary = array();
+		foreach ($report as $row) {
+			$kd_admin = $row['kd_admin'] ?: 'UNKNOWN';
+			if (!isset($summary[$kd_admin])) {
+				$summary[$kd_admin] = array(
+					'nama_admin' => $row['nama_admin'] ?: $kd_admin,
+					'hadir' => 0,
+					'tidak_hadir' => 0,
+					'belum_absen' => 0,
+					'total_scan' => 0,
+					'total_record' => 0,
+				);
+			}
+
+			$summary[$kd_admin]['total_record']++;
+			$summary[$kd_admin]['total_scan'] += (int)$row['total_scan'];
+
+			if ($row['status_kehadiran'] === 'complete') {
+				$summary[$kd_admin]['hadir']++;
+			} elseif ($row['status_kehadiran'] === 'incomplete' || $row['status_kehadiran'] === 'in progress') {
+				$summary[$kd_admin]['tidak_hadir']++;
+			} else {
+				$summary[$kd_admin]['belum_absen']++;
+			}
+		}
+
+		$data['title'] = 'Laporan Bulanan Absensi';
+		$data['selected_month'] = $selected_month;
+		$data['report'] = $report;
+		$data['summary'] = $summary;
+		$this->load->view('laporan_bulanan_absensi', $data);
+	}
+
 	public function history_absensi() {
 		$kd_admin = $this->input->get('kd_admin');
 		$tanggal = $this->input->get('tanggal');

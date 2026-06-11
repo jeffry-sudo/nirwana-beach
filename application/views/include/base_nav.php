@@ -275,6 +275,14 @@
                 </a>
               </li>
             </ul>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="<?php echo base_url('admin/laporan_bulanan_absensi') ?>" class="nav-link">
+                  <i class="fa fa-circle-o nav-icon"></i>
+                  <p>Laporan Bulanan Absensi</p>
+                </a>
+              </li>
+            </ul>
           </li>
           <?php } ?>
 
