@@ -82,7 +82,7 @@
         <!-- Barcode -->
        <!-- Barcode -->
         <div class="barcode">
-            <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= $cetak['kd_masuk']; ?>&code=Code128&dpi=80&width=45&height=40" alt="Barcode">
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= urlencode($cetak['kd_masuk']); ?>&code=Code128&dpi=180&width=180&height=70" alt="Barcode" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
         </div>
 
          <p><strong>Jumlah Orang:</strong> <?= $jumlahOrang; ?> x Rp <?= number_format($hargaPerOrang, 0, ',', '.'); ?></p>

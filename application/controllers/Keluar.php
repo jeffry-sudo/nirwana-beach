@@ -26,17 +26,20 @@ class Keluar extends CI_Controller {
 		}
 	}
 		function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
-            $kd = "";
-            if($q->num_rows()>0){
-                foreach($q->result() as $k){
-                    $tmp = ((int)$k->kd_max)+1;
-                    $kd = sprintf("%08s", $tmp);
-                }
-            }else{
-                $kd = "001";
+            $q = $this->db->query("SELECT MAX(CAST(RIGHT(kd_keluar,8) AS UNSIGNED)) AS kd_max FROM tbl_keluar");
+            $tmp = 1;
+
+            if ($q->num_rows() > 0 && $q->row()->kd_max !== null) {
+                $tmp = (int) $q->row()->kd_max + 1;
             }
-            return "K".$kd;
+
+            do {
+                $kd = sprintf("%08d", $tmp);
+                $kode = 'K' . $kd;
+                $tmp++;
+            } while ($this->db->where('kd_keluar', $kode)->count_all_results('tbl_keluar') > 0);
+
+            return $kode;
         }
 	public function index(){
 		$data['title'] = 'Parkir Keluar';

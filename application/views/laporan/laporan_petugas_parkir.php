@@ -184,6 +184,7 @@
     <script>
  let codeReader = new ZXing.BrowserMultiFormatReader();
 let isCameraRunning = false;
+let isProcessingScan = false;
 
 document.getElementById("scanButton").addEventListener("click", function () {
     document.getElementById("scanModal").style.display = "flex";
@@ -192,32 +193,40 @@ document.getElementById("scanButton").addEventListener("click", function () {
 
 /* ==== START CAMERA SCAN ==== */
 function startZXingScanner() {
-    if (isCameraRunning) return; // cegah video play 2x
+    if (isCameraRunning || isProcessingScan) return;
     isCameraRunning = true;
 
     codeReader.decodeFromVideoDevice(null, 'preview', (result, err) => {
-        if (result) {
-            let kd = result.text;
-            document.getElementById("qr-result").innerHTML = "Hasil: " + kd;
+        if (!result || isProcessingScan) return;
 
-            // Kirim kode ke server
-            $.ajax({
-                url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
-                type: "POST",
-                data: { kd_masuk: kd },
-                dataType: "json",
-                success: function(response) {
-                    alert(response.message);
-                    if (response.status === "success") {
-                        closeScanner();
+        isProcessingScan = true;
+        let kd = result.text.trim();
+        document.getElementById("qr-result").innerHTML = "Hasil: " + kd;
+
+        closeScanner();
+
+        $.ajax({
+            url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
+            type: "POST",
+            data: { kd_masuk: kd },
+            dataType: "json",
+            success: function(response) {
+                if (response && response.status === "success") {
+                    swal("Berhasil", response.message || "Karcis berhasil diklaim", "success");
+                    setTimeout(function () {
                         location.reload();
-                    }
-                },
-                error: function() {
-                    alert("Gagal mengirim data ke server.");
+                    }, 800);
+                } else {
+                    swal("Gagal", response.message || "Gagal memproses karcis", "error");
+                    isProcessingScan = false;
                 }
-            });
-        }
+            },
+            error: function(xhr) {
+                console.error('AJAX error:', xhr.status, xhr.responseText);
+                swal("Gagal", xhr.responseText || "Gagal mengirim data ke server.", "error");
+                isProcessingScan = false;
+            }
+        });
     });
 }
 
@@ -236,11 +245,16 @@ function startZXingScanner() {
 function closeScanner() {
     document.getElementById("scanModal").style.display = "none";
 
-    if (codeReader) {
-        codeReader.reset();
+    try {
+        if (codeReader && typeof codeReader.reset === 'function') {
+            codeReader.reset();
+        }
+    } catch (e) {
+        console.warn('Reset scanner gagal:', e);
     }
 
     isCameraRunning = false;
+    isProcessingScan = false;
     document.getElementById("qr-result").innerHTML = "";
     document.getElementById("uploadImage").value = "";
     document.getElementById("manual_kode").value = "";
@@ -259,12 +273,17 @@ document.getElementById("uploadImage").addEventListener("change", function (even
 });
 
 function scanImage(base64Image) {
+    if (isProcessingScan) return;
+    isProcessingScan = true;
+
     const imageReader = new ZXing.BrowserMultiFormatReader();
 
     imageReader.decodeFromImage(undefined, base64Image)
         .then(result => {
-            let kd = result.text;
+            let kd = result.text.trim();
             document.getElementById("qr-result").innerHTML = "Hasil: " + kd;
+
+            closeScanner();
 
             $.ajax({
                 url: "<?php echo base_url('laporan/update_status_masuk'); ?>",
@@ -272,14 +291,20 @@ function scanImage(base64Image) {
                 data: { kd_masuk: kd },
                 dataType: "json",
                 success: function(response) {
-                    alert(response.message);
-                    if (response.status === "success") {
-                        closeScanner();
-                        location.reload();
+                    if (response && response.status === "success") {
+                        swal("Berhasil", response.message || "Karcis berhasil diklaim", "success");
+                        setTimeout(function () {
+                            location.reload();
+                        }, 800);
+                    } else {
+                        swal("Gagal", response.message || "Gagal memproses karcis", "error");
+                        isProcessingScan = false;
                     }
                 },
-                error: function() {
-                    alert("Gagal mengirim data ke server.");
+                error: function(xhr) {
+                    console.error('AJAX error:', xhr.status, xhr.responseText);
+                    swal("Gagal", xhr.responseText || "Gagal mengirim data ke server.", "error");
+                    isProcessingScan = false;
                 }
             });
         })
@@ -291,6 +316,7 @@ function scanImage(base64Image) {
 
         .catch(err => {
             console.error(err);
+            isProcessingScan = false;
             document.getElementById("qr-result").innerHTML =
                 "<span style='color:red'>Barcode tidak terbaca. Silakan input kode manual.</span>";
 
@@ -429,10 +455,14 @@ $(document).ready(function () {
 });
 
 function submitManualKode() {
+    if (isProcessingScan) return;
+    isProcessingScan = true;
+
     let kd = document.getElementById("manual_kode").value.trim();
 
     if (kd === "") {
-        alert("Kode karcis tidak boleh kosong");
+        isProcessingScan = false;
+        swal("Perhatian", "Kode karcis tidak boleh kosong", "warning");
         return;
     }
 
@@ -442,14 +472,21 @@ function submitManualKode() {
         data: { kd_masuk: kd },
         dataType: "json",
         success: function(response) {
-            alert(response.message);
-            if (response.status === "success") {
+            if (response && response.status === "success") {
                 closeScanner();
-                location.reload();
+                swal("Berhasil", response.message || "Karcis berhasil diklaim", "success");
+                setTimeout(function () {
+                    location.reload();
+                }, 800);
+            } else {
+                isProcessingScan = false;
+                swal("Gagal", response.message || "Gagal memproses karcis", "error");
             }
         },
-        error: function() {
-            alert("Gagal mengirim data ke server.");
+        error: function(xhr) {
+            console.error('AJAX error:', xhr.status, xhr.responseText);
+            isProcessingScan = false;
+            swal("Gagal", xhr.responseText || "Gagal mengirim data ke server.", "error");
         }
     });
 }

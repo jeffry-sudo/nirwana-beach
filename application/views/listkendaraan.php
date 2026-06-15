@@ -106,13 +106,16 @@
   $(document).ready(function () {
     // Inisialisasi DataTables dengan ID tabel
     $('#example1').DataTable({
-      "paging": true,             // Pagination aktif
-      "lengthChange": true,       // Opsi mengubah jumlah data per halaman
-      "searching": true,          // Fitur pencarian
-      "ordering": true,           // Fitur pengurutan
-      "info": true,               // Menampilkan informasi jumlah data
-      "autoWidth": false,         // Mengatur lebar kolom otomatis
-      "responsive": true          // Membuat tabel responsif
+      "paging": true,
+      "pageLength": 25,
+      "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+      "lengthChange": true,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false,
+      "responsive": true,
+      "deferRender": true
     });
   });
 </script>

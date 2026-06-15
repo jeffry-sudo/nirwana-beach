@@ -360,22 +360,25 @@ class Laporan extends CI_Controller {
         // }
 
 			function get_kod(){
-            $q = $this->db->query("SELECT MAX(RIGHT(kd_masuk,8)) AS kd_max FROM tbl_masuk");
-            $kd = "";
-            if($q->num_rows()>0){
-                foreach($q->result() as $k){
-                    $tmp = ((int)$k->kd_max)+1;
-                    $kd = sprintf("%08s", $tmp);
-                }
-            }else{
-                $kd = "001";
+            $q = $this->db->query("SELECT MAX(CAST(RIGHT(kd_keluar,8) AS UNSIGNED)) AS kd_max FROM tbl_keluar");
+            $tmp = 1;
+
+            if ($q->num_rows() > 0 && $q->row()->kd_max !== null) {
+                $tmp = (int) $q->row()->kd_max + 1;
             }
-            return "K".$kd;
+
+            do {
+                $kd = sprintf("%08d", $tmp);
+                $kode = 'K' . $kd;
+                $tmp++;
+            } while ($this->db->where('kd_keluar', $kode)->count_all_results('tbl_keluar') > 0);
+
+            return $kode;
         }
 
 		  public function update_status_masuk()
 {
-    $kd_masuk = $this->input->post('kd_masuk');
+    $kd_masuk = trim($this->input->post('kd_masuk'));
     $kd_admin = $this->session->userdata('kd_admin');
 
     if (!$kd_masuk || !$kd_admin) {
@@ -383,65 +386,53 @@ class Laporan extends CI_Controller {
         return;
     }
 
-    // Ambil data karcis saat masuk
-    $sqlcek = $this->db->query("
-        SELECT * FROM tbl_masuk 
-        JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan
-        WHERE kd_masuk = '$kd_masuk'
-    ")->row_array();
+    $sqlcek = $this->db->query("SELECT a.*, b.harga_kendaraan, b.nama_kendaraan FROM tbl_masuk a JOIN tbl_kendaraan b ON a.kd_kendaraan = b.kd_kendaraan WHERE a.kd_masuk = '$kd_masuk'")->row_array();
 
     if (!$sqlcek) {
         echo json_encode(["status" => "error", "message" => "Kode tidak ditemukan"]);
         return;
     }
 
-    // Cek apakah sudah pernah diklaim
-    if ($sqlcek['kd_admin'] !== null) {
+    if ((int) $sqlcek['status_masuk'] !== 1 || !empty($sqlcek['kd_admin'])) {
         echo json_encode(["status" => "error", "message" => "Karcis sudah diklaim"]);
         return;
     }
 
-    // Hitung durasi
     $awal  = strtotime($sqlcek['tgl_masuk']);
     $akhir = strtotime(date('Y-m-d H:i:s'));
     $diff  = $akhir - $awal;
-
     $jam   = floor($diff / 3600);
     $menit = floor(($diff % 3600) / 60);
-
     $lama_parkir = "$jam Jam, $menit Menit";
+    $total = (int) $sqlcek['harga_kendaraan'] * (int) $sqlcek['jml_org'];
 
-    // Hitung total
-    $total = $sqlcek['harga_kendaraan'] * $sqlcek['jml_org'];
-
-    // Update status masuk + tambahkan admin yg memproses
     $this->db->where('kd_masuk', $kd_masuk);
-    $this->db->update('tbl_masuk', [
+    $this->db->where('status_masuk', 1);
+    $this->db->where('kd_admin IS NULL', null, false);
+    $updated = $this->db->update('tbl_masuk', [
         'kd_admin' => $kd_admin,
         'status_masuk' => 2
     ]);
 
-    // Insert ke tabel keluar
-    $data_keluar = [
+    if (!$updated || $this->db->affected_rows() === 0) {
+        echo json_encode(["status" => "error", "message" => "Karcis sudah diklaim"]);
+        return;
+    }
+
+    $this->db->insert('tbl_keluar', [
         'kd_keluar' => $this->get_kod(),
         'kd_masuk' => $kd_masuk,
         'kd_member' => null,
         'tgl_jam_masuk' => $sqlcek['tgl_masuk'],
-        'tgl_jam_keluar' => date("Y-m-d H:i:s", $akhir),
+        'tgl_jam_keluar' => date('Y-m-d H:i:s', $akhir),
         'lama_parkir_keluar' => $lama_parkir,
-        'tarif_keluar' => $sqlcek['harga_kendaraan'],
+        'tarif_keluar' => (int) $sqlcek['harga_kendaraan'],
         'total_keluar' => $total,
         'status_keluar' => 1,
         'create_keluar' => $this->session->userdata('nama_admin')
-    ];
+    ]);
 
-    $this->db->insert('tbl_keluar', $data_keluar);
-
-    // if ($this->db->affected_rows() > 0) {
-        echo json_encode(["status" => "success", "message" => "Karcis berhasil diklaim"]);
-    // } else {
-        // echo json_encode(["status" => "error", "message" => "Terjadi kesalahan, coba lagi"]);
-    // }
+    echo json_encode(["status" => "success", "message" => "Karcis berhasil diklaim"]);
 }
 
 

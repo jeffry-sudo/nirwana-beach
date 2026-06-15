@@ -54,63 +54,26 @@ class Masuk extends CI_Controller {
 	
 	function get_kod(){
 		$prefix = 'MH';
-		$max_attempts = 5;
-		$attempt = 0;
+		$chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+		$max_attempts = 10;
 
-		while ($attempt < $max_attempts) {
-			try {
-				// Start transaction to prevent race conditions
-				$this->db->trans_start();
+		$total_records = (int) $this->db->count_all('tbl_masuk');
+		$length = ($total_records >= (pow(strlen($chars), 8) * 0.9)) ? 9 : 8;
 
-				// Lock the table for reading to get the max value
-				$this->db->query("LOCK TABLES tbl_masuk WRITE");
+		for ($attempt = 0; $attempt < $max_attempts; $attempt++) {
+			$random = '';
+			for ($i = 0; $i < $length; $i++) {
+				$random .= $chars[random_int(0, strlen($chars) - 1)];
+			}
 
-				$q = $this->db->query("
-					SELECT MAX(CAST(RIGHT(kd_masuk,8) AS UNSIGNED)) AS kd_max 
-					FROM tbl_masuk 
-					WHERE kd_masuk LIKE '".$prefix."%'
-				");
+			$kode = $prefix . $random;
 
-				if ($q->num_rows() > 0 && $q->row()->kd_max != null) {
-					$tmp = ((int)$q->row()->kd_max) + 1;
-					$kd  = sprintf("%08d", $tmp);
-				} else {
-					$kd = "00000001";
-				}
-
-				$result = $prefix.$kd;
-
-				// Unlock the table
-				$this->db->query("UNLOCK TABLES");
-
-				$this->db->trans_complete();
-
-				if ($this->db->trans_status() === FALSE) {
-					$attempt++;
-					if ($attempt >= $max_attempts) {
-						log_message('error', 'get_kod() failed after '.$max_attempts.' attempts');
-						throw new Exception('Failed to generate unique ID');
-					}
-					usleep(100000); // Wait 100ms before retry
-					continue;
-				}
-
-				return $result;
-
-			} catch (Exception $e) {
-				$this->db->query("UNLOCK TABLES");
-				$this->db->trans_rollback();
-				$attempt++;
-				
-				if ($attempt >= $max_attempts) {
-					log_message('error', 'get_kod() exception: '.$e->getMessage());
-					throw $e;
-				}
-				usleep(100000); // Wait 100ms before retry
+			if ($this->db->where('kd_masuk', $kode)->count_all_results('tbl_masuk') === 0) {
+				return $kode;
 			}
 		}
 
-		throw new Exception('Unable to generate unique ID after '.$max_attempts.' attempts');
+		throw new Exception('Unable to generate unique karcis after '.$max_attempts.' attempts');
 	}
 
 // function get_kod()
@@ -344,8 +307,15 @@ private function isCombinationFull($length)
 	
 	public function listkendaraanmasuk($value=''){
 		$data['title'] = 'List Kendaraan Yang Belum Keluar';
-		$data['masuk'] = $this->db->query("SELECT * FROM tbl_masuk RIGHT JOIN tbl_kendaraan ON tbl_masuk.kd_kendaraan = tbl_kendaraan.kd_kendaraan WHERE status_masuk = '1'")->result_array();
-		// die(print_r($data));
+
+		$this->db->select('m.kd_masuk, m.tgl_masuk, m.create_masuk, k.nama_kendaraan');
+		$this->db->from('tbl_masuk m');
+		$this->db->join('tbl_kendaraan k', 'm.kd_kendaraan = k.kd_kendaraan', 'left');
+		$this->db->where('m.status_masuk', 1);
+		$this->db->order_by('m.tgl_masuk', 'DESC');
+		$this->db->limit(100);
+
+		$data['masuk'] = $this->db->get()->result_array();
 		$this->load->view('listkendaraan', $data, FALSE);
 	}
 	public function getmember($id=''){
