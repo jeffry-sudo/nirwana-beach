@@ -34,6 +34,12 @@
         .ticket .barcode {
             margin: 5px 0;
         }
+        .ticket .barcode-text {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 4px 0 0;
+            letter-spacing: 1px;
+        }
         .separator {
             margin: 5px 0;
             border-top: 1px dashed #000;
@@ -83,6 +89,7 @@
        <!-- Barcode -->
         <div class="barcode">
             <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= urlencode($cetak['kd_masuk']); ?>&code=Code128&dpi=180&width=180&height=70" alt="Barcode" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+            <div class="barcode-text"><?= htmlspecialchars($cetak['kd_masuk']); ?></div>
         </div>
 
          <p><strong>Jumlah Orang:</strong> <?= $jumlahOrang; ?> x Rp <?= number_format($hargaPerOrang, 0, ',', '.'); ?></p>
